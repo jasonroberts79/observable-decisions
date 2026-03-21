@@ -1,0 +1,91 @@
+name: Deploy API to Azure Functions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/deploy-api.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "api/**"
+      - ".github/workflows/deploy-api.yml"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
+
+jobs:
+  # -----------------------------------------------------------------------
+  # 1. Lint & test
+  # -----------------------------------------------------------------------
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: api/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -v --tb=short
+
+  # -----------------------------------------------------------------------
+  # 2. Build & deploy (only on push to main)
+  # -----------------------------------------------------------------------
+  deploy:
+    name: Deploy to Azure Functions
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+
+    permissions:
+      id-token: write   # for OIDC login
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: api/requirements.txt
+
+      - name: Install production dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: api
+          scm-do-build-during-deployment: true
+          enable-oryx-build: true
