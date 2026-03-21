@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
-import { getStorageAdapter } from "@/lib/storage"
-import { DecisionSchema } from "@/lib/decisions/schema"
+
+const API_BASE = process.env.DECISIONS_API_URL ?? "http://localhost:8000"
 
 export async function GET(
   _req: Request,
@@ -10,13 +10,11 @@ export async function GET(
   const session = await auth()
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  try {
-    const adapter = getStorageAdapter(session)
-    const decision = await adapter.get(id)
-    return Response.json(decision)
-  } catch (err) {
-    return Response.json({ error: String(err) }, { status: 404 })
-  }
+  const res = await fetch(`${API_BASE}/api/decisions/${id}`, {
+    headers: { "x-user-email": session.user?.email ?? "" },
+  })
+  const data = await res.json()
+  return Response.json(data, { status: res.status })
 }
 
 export async function PUT(
@@ -27,23 +25,18 @@ export async function PUT(
   const session = await auth()
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  try {
-    const adapter = getStorageAdapter(session)
-    const existing = await adapter.get(id)
-    const body = await request.json()
+  const body = await request.json()
 
-    const updated = DecisionSchema.parse({
-      ...existing,
-      ...body,
-      id,
-      updatedAt: new Date().toISOString(),
-    })
-
-    await adapter.put(id, updated)
-    return Response.json(updated)
-  } catch (err) {
-    return Response.json({ error: String(err) }, { status: 400 })
-  }
+  const res = await fetch(`${API_BASE}/api/decisions/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-email": session.user?.email ?? "",
+    },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json()
+  return Response.json(data, { status: res.status })
 }
 
 export async function DELETE(
@@ -54,11 +47,12 @@ export async function DELETE(
   const session = await auth()
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  try {
-    const adapter = getStorageAdapter(session)
-    await adapter.delete(id)
-    return new Response(null, { status: 204 })
-  } catch (err) {
-    return Response.json({ error: String(err) }, { status: 500 })
-  }
+  const res = await fetch(`${API_BASE}/api/decisions/${id}`, {
+    method: "DELETE",
+    headers: { "x-user-email": session.user?.email ?? "" },
+  })
+
+  if (res.status === 204) return new Response(null, { status: 204 })
+  const data = await res.json()
+  return Response.json(data, { status: res.status })
 }

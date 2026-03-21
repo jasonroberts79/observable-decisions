@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
-import { getStorageAdapter } from "@/lib/storage"
+
+const API_BASE = process.env.DECISIONS_API_URL ?? "http://localhost:8000"
 
 export async function POST(
   request: Request,
@@ -9,15 +10,16 @@ export async function POST(
   const session = await auth()
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 })
 
-  try {
-    const body = await request.json().catch(() => ({}))
-    const email: string | undefined = body.email
+  const body = await request.json().catch(() => ({}))
 
-    const adapter = getStorageAdapter(session)
-    const shareUrl = await adapter.share(id, email)
-
-    return Response.json({ url: shareUrl })
-  } catch (err) {
-    return Response.json({ error: String(err) }, { status: 500 })
-  }
+  const res = await fetch(`${API_BASE}/api/decisions/${id}/share`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-email": session.user?.email ?? "",
+    },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json()
+  return Response.json(data, { status: res.status })
 }
