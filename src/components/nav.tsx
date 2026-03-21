@@ -1,8 +1,6 @@
-"use client"
-
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { signOut, useSession } from "next-auth/react"
+import { Link, useLocation } from "react-router-dom"
+import { useAuth } from "@/lib/auth-context"
+import { logoutUrl } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import {
   BookOpen,
@@ -17,8 +15,8 @@ const links = [
 ]
 
 export function Nav() {
-  const pathname = usePathname()
-  const { data: session } = useSession()
+  const { pathname } = useLocation()
+  const { user } = useAuth()
 
   return (
     <aside className="fixed inset-y-0 left-0 z-10 flex w-56 flex-col border-r border-zinc-200 bg-white">
@@ -33,7 +31,7 @@ export function Nav() {
       {/* Quick action */}
       <div className="px-3 pt-3">
         <Link
-          href="/decisions/new"
+          to="/decisions/new"
           className="flex w-full items-center gap-2 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -46,7 +44,7 @@ export function Nav() {
         {links.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
-            href={href}
+            to={href}
             className={cn(
               "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
               pathname.startsWith(href)
@@ -62,13 +60,13 @@ export function Nav() {
 
       {/* Bottom */}
       <div className="space-y-0.5 border-t border-zinc-200 px-3 py-3">
-        {session?.user && (
+        {user && (
           <div className="mb-2 truncate px-2.5 text-xs text-zinc-400">
-            {session.user.email}
+            {user.userDetails}
           </div>
         )}
         <Link
-          href="/settings"
+          to="/settings"
           className={cn(
             "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
             pathname === "/settings"
@@ -79,13 +77,13 @@ export function Nav() {
           <Settings className="h-4 w-4" />
           Settings
         </Link>
-        <button
-          onClick={() => signOut({ callbackUrl: "/signin" })}
+        <a
+          href={logoutUrl}
           className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
         >
           <LogOut className="h-4 w-4" />
           Sign out
-        </button>
+        </a>
       </div>
     </aside>
   )

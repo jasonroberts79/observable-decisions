@@ -1,13 +1,14 @@
-"use client"
-
 import { useState } from "react"
 import { Share2, Check, Loader2 } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import { shareDecision } from "@/lib/api"
 
 interface ShareButtonProps {
   id: string
 }
 
 export function ShareButton({ id }: ShareButtonProps) {
+  const { user } = useAuth()
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">(
     "idle",
   )
@@ -17,15 +18,14 @@ export function ShareButton({ id }: ShareButtonProps) {
 
   const share = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) return
     setState("loading")
     try {
-      const res = await fetch(`/api/decisions/${id}/share`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(email ? { email } : {}),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      const data = await shareDecision(
+        id,
+        user.userDetails,
+        email || undefined,
+      )
       setShareUrl(data.url)
       setState("done")
     } catch {

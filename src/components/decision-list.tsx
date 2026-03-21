@@ -1,7 +1,5 @@
-"use client"
-
 import { useState, useMemo, useEffect, useCallback } from "react"
-import Link from "next/link"
+import { Link } from "react-router-dom"
 import Fuse from "fuse.js"
 import { Search, X } from "lucide-react"
 import { StatusBadge } from "@/components/status-badge"
@@ -85,7 +83,7 @@ export function DecisionList({ decisions }: DecisionListProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search decisions…"
+            placeholder="Search decisions\u2026"
             className="w-full rounded-md border border-zinc-200 bg-white py-1.5 pl-8 pr-8 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400"
           />
           {query && (
@@ -160,7 +158,7 @@ export function DecisionList({ decisions }: DecisionListProps) {
                 >
                   <td className="px-4 py-2.5">
                     <Link
-                      href={`/decisions/${d.id}`}
+                      to={`/decisions/${d.id}`}
                       className="font-medium text-zinc-900 hover:text-zinc-600 group-hover:underline decoration-zinc-300 underline-offset-2"
                     >
                       {d.title}
@@ -206,7 +204,7 @@ export function DecisionList({ decisions }: DecisionListProps) {
       {filtered.length > 0 && (
         <p className="text-xs text-zinc-400">
           {filtered.length} decision{filtered.length !== 1 ? "s" : ""}
-          {(query || statusFilter) && ` · j/k to navigate`}
+          {(query || statusFilter) && ` \u00b7 j/k to navigate`}
         </p>
       )}
     </div>

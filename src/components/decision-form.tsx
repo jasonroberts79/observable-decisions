@@ -1,11 +1,11 @@
-"use client"
-
 import { useState, FormEvent } from "react"
-import { useRouter } from "next/navigation"
+import { useNavigate } from "react-router-dom"
 import { TagInput } from "@/components/tag-input"
 import { MarkdownField } from "@/components/markdown-field"
 import { OptionsEditor } from "@/components/options-editor"
 import { todayISO } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-context"
+import { createDecision, updateDecision } from "@/lib/api"
 import { DecisionStatus, STATUS_LABELS } from "@/lib/decisions/schema"
 import type { Decision, Option } from "@/lib/decisions/schema"
 
@@ -17,7 +17,8 @@ interface DecisionFormProps {
 }
 
 export function DecisionForm({ mode, initial }: DecisionFormProps) {
-  const router = useRouter()
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,6 +41,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
+    if (!user) return
     setSubmitting(true)
     setError(null)
 
@@ -57,26 +59,12 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
     }
 
     try {
-      const url =
+      const saved =
         mode === "edit" && initial?.id
-          ? `/api/decisions/${initial.id}`
-          : "/api/decisions"
-      const method = mode === "edit" ? "PUT" : "POST"
+          ? await updateDecision(initial.id, body, user.userDetails)
+          : await createDecision(body, user.userDetails)
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      })
-
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error ?? "Request failed")
-      }
-
-      const saved: Decision = await res.json()
-      router.push(`/decisions/${saved.id}`)
-      router.refresh()
+      navigate(`/decisions/${saved.id}`)
     } catch (err) {
       setError(String(err))
       setSubmitting(false)
@@ -101,7 +89,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          placeholder="Short imperative sentence describing the decision…"
+          placeholder="Short imperative sentence describing the decision\u2026"
           className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400"
         />
       </div>
@@ -139,7 +127,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
         <TagInput
           value={deciders}
           onChange={setDeciders}
-          placeholder="Add name or email…"
+          placeholder="Add name or email\u2026"
         />
         <p className="text-xs text-zinc-400">
           Press Enter or comma to add each person.
@@ -149,7 +137,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
       {/* Tags */}
       <div className="space-y-1">
         <label className="text-sm font-medium text-zinc-700">Tags</label>
-        <TagInput value={tags} onChange={setTags} placeholder="Add tag…" />
+        <TagInput value={tags} onChange={setTags} placeholder="Add tag\u2026" />
       </div>
 
       <hr className="border-zinc-100" />
@@ -204,7 +192,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
       <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => navigate(-1)}
           className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
         >
           Cancel
@@ -215,7 +203,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
           className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 transition-colors"
         >
           {submitting
-            ? "Saving…"
+            ? "Saving\u2026"
             : mode === "edit"
               ? "Save changes"
               : "Create decision"}

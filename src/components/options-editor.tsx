@@ -1,5 +1,3 @@
-"use client"
-
 import { nanoid } from "nanoid"
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react"
 import { useState } from "react"

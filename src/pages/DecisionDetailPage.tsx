@@ -1,38 +1,33 @@
-import { auth } from "@/auth"
-import { notFound } from "next/navigation"
-import Link from "next/link"
+import { useState, useEffect } from "react"
+import { useParams, Link, Navigate } from "react-router-dom"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { StatusBadge } from "@/components/status-badge"
 import { ShareButton } from "@/components/share-button"
 import { formatDate } from "@/lib/utils"
 import { Edit, ArrowLeft } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import { getDecision } from "@/lib/api"
 import type { Decision } from "@/lib/decisions/schema"
 
-export const dynamic = "force-dynamic"
+export function DecisionDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const { user } = useAuth()
+  const [decision, setDecision] = useState<Decision | null>(null)
+  const [notFound, setNotFound] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-const API_BASE = process.env.DECISIONS_API_URL ?? "http://localhost:8000"
+  useEffect(() => {
+    if (!user || !id) return
+    getDecision(id, user.userDetails)
+      .then(setDecision)
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false))
+  }, [id, user])
 
-export default async function DecisionPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const session = await auth()
-  if (!session) return null
-
-  let decision: Decision
-  try {
-    const res = await fetch(`${API_BASE}/api/decisions/${id}`, {
-      headers: { "x-user-email": session.user?.email ?? "" },
-      cache: "no-store",
-    })
-    if (!res.ok) throw new Error(`Not found`)
-    decision = await res.json()
-  } catch {
-    notFound()
-  }
+  if (loading) return null
+  if (notFound) return <Navigate to="/decisions" replace />
+  if (!decision) return null
 
   const chosenOption = decision.options.find((o) => o.chosen)
 
@@ -41,16 +36,16 @@ export default async function DecisionPage({
       {/* Back + actions */}
       <div className="flex items-center justify-between">
         <Link
-          href="/decisions"
+          to="/decisions"
           className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Decisions
         </Link>
         <div className="flex items-center gap-2">
-          <ShareButton id={id} />
+          <ShareButton id={id!} />
           <Link
-            href={`/decisions/${id}/edit`}
+            to={`/decisions/${id}/edit`}
             className="flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
             <Edit className="h-3.5 w-3.5" />
@@ -65,10 +60,10 @@ export default async function DecisionPage({
           <StatusBadge status={decision.status} />
           {decision.supersededBy && (
             <Link
-              href={`/decisions/${decision.supersededBy}`}
+              to={`/decisions/${decision.supersededBy}`}
               className="text-xs text-violet-600 hover:underline"
             >
-              Superseded by →
+              Superseded by &rarr;
             </Link>
           )}
         </div>
@@ -181,7 +176,9 @@ export default async function DecisionPage({
                               key={i}
                               className="flex gap-1.5 text-xs text-zinc-600"
                             >
-                              <span className="text-red-400 shrink-0">−</span>
+                              <span className="text-red-400 shrink-0">
+                                &minus;
+                              </span>
                               {c}
                             </li>
                           ))}
@@ -199,9 +196,7 @@ export default async function DecisionPage({
       {/* Metadata footer */}
       <div className="border-t border-zinc-100 pt-4 text-xs text-zinc-400 space-y-1">
         <p>Created by {decision.createdBy}</p>
-        <p>
-          Last updated {new Date(decision.updatedAt).toLocaleString()}
-        </p>
+        <p>Last updated {new Date(decision.updatedAt).toLocaleString()}</p>
         <p className="font-mono">{decision.id}</p>
       </div>
     </div>

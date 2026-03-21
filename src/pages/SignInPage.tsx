@@ -1,18 +1,16 @@
-import { signIn } from "@/auth"
-import { auth } from "@/auth"
-import { redirect } from "next/navigation"
 import { ChevronRight } from "lucide-react"
+import { loginUrl } from "@/lib/auth"
 
-export default async function SignInPage() {
-  const session = await auth()
-  if (session) redirect("/decisions")
-
+export function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
         <div className="space-y-1">
           <div className="flex items-center gap-1.5">
-            <ChevronRight className="h-4 w-4 text-zinc-400" strokeWidth={2.5} />
+            <ChevronRight
+              className="h-4 w-4 text-zinc-400"
+              strokeWidth={2.5}
+            />
             <span className="text-sm font-semibold text-zinc-900">
               Observable Decisions
             </span>
@@ -23,55 +21,33 @@ export default async function SignInPage() {
         </div>
 
         <div className="space-y-2.5">
-          <form
-            action={async () => {
-              "use server"
-              await signIn("google", { redirectTo: "/decisions" })
-            }}
+          <a
+            href={loginUrl("google")}
+            className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
-            <button
-              type="submit"
-              className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-            >
-              <GoogleIcon />
-              Continue with Google
-            </button>
-          </form>
+            <GoogleIcon />
+            Continue with Google
+          </a>
 
-          <form
-            action={async () => {
-              "use server"
-              await signIn("microsoft-entra-id", { redirectTo: "/decisions" })
-            }}
+          <a
+            href={loginUrl("aad")}
+            className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
-            <button
-              type="submit"
-              className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-            >
-              <MicrosoftIcon />
-              Continue with Microsoft
-            </button>
-          </form>
+            <MicrosoftIcon />
+            Continue with Microsoft
+          </a>
 
-          <form
-            action={async () => {
-              "use server"
-              await signIn("github", { redirectTo: "/decisions" })
-            }}
+          <a
+            href={loginUrl("github")}
+            className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
-            <button
-              type="submit"
-              className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-            >
-              <GitHubIcon />
-              Continue with GitHub
-            </button>
-          </form>
+            <GitHubIcon />
+            Continue with GitHub
+          </a>
         </div>
 
         <p className="text-xs text-zinc-400">
-          Google and Microsoft sign-in automatically use your Drive or OneDrive
-          for storage. GitHub requires S3 or Azure Blob configuration.
+          Authentication is handled by Azure Static Web Apps built-in auth.
         </p>
       </div>
     </div>

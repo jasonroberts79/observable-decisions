@@ -1,6 +1,6 @@
 import { DecisionForm } from "@/components/decision-form"
 
-export default function NewDecisionPage() {
+export function NewDecisionPage() {
   return (
     <div className="space-y-6">
       <div>
