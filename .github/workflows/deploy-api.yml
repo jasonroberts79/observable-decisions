@@ -68,7 +68,9 @@ jobs:
         run: uv python install
       
       - name: Install dependencies
-        run: uv sync --no-dev
+        run: |
+          uv sync --no-dev --link-mode=copy
+          ren .venv .python-packages
 
       - name: Log in to Azure
         uses: azure/login@v2
