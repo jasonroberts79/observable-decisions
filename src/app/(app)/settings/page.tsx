@@ -6,15 +6,15 @@ export default async function SettingsPage() {
   if (!session) return null
 
   const provider = (session as { provider?: string }).provider ?? "unknown"
-
-  const storageInfo = getStorageInfo(provider)
+  const apiUrl = process.env.DECISIONS_API_URL ?? "http://localhost:8000"
+  const apiConfigured = !!process.env.DECISIONS_API_URL
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-semibold text-zinc-900">Settings</h1>
         <p className="mt-0.5 text-sm text-zinc-500">
-          Account and storage configuration.
+          Account and API configuration.
         </p>
       </div>
 
@@ -30,53 +30,56 @@ export default async function SettingsPage() {
         </div>
       </section>
 
-      {/* Storage */}
+      {/* API Backend */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
-          Storage
+          API Backend
         </h2>
         <div className="rounded-md border border-zinc-200 bg-white divide-y divide-zinc-100">
-          <Row label="Backend" value={storageInfo.name} />
-          <Row label="Location" value={storageInfo.location} />
+          <Row label="Backend" value="Decisions API (FastAPI)" />
+          <Row label="URL" value={apiUrl} />
         </div>
         <div
           className={`flex items-start gap-2 rounded-md border px-3 py-2.5 text-sm ${
-            storageInfo.configured
+            apiConfigured
               ? "border-green-200 bg-green-50 text-green-800"
               : "border-amber-200 bg-amber-50 text-amber-800"
           }`}
         >
-          {storageInfo.configured ? (
+          {apiConfigured ? (
             <CheckCircle className="h-4 w-4 mt-0.5 shrink-0" />
           ) : (
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
           )}
-          <p>{storageInfo.message}</p>
+          <p>
+            {apiConfigured
+              ? "The API backend is configured. Decisions are stored via the API."
+              : "DECISIONS_API_URL is not set — defaulting to http://localhost:8000. Set it in your environment to point to your API backend."}
+          </p>
         </div>
       </section>
 
-      {/* S3 config */}
-      {!storageInfo.configured && (
+      {/* Configuration help */}
+      {!apiConfigured && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
-            Configure S3 fallback
+            Configure API backend
           </h2>
           <div className="rounded-md border border-zinc-200 bg-white p-4 text-sm text-zinc-600 space-y-2">
             <p>
-              Set the following environment variables to use AWS S3 as a storage
-              backend:
+              Set the following environment variable to point to your Decisions
+              API:
             </p>
             <pre className="rounded bg-zinc-50 border border-zinc-200 p-3 text-xs font-mono text-zinc-700 overflow-auto">
-              {`AWS_S3_BUCKET=your-bucket-name
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...`}
+              {`DECISIONS_API_URL=http://localhost:8000`}
             </pre>
-            <p>Or for Azure Blob Storage:</p>
-            <pre className="rounded bg-zinc-50 border border-zinc-200 p-3 text-xs font-mono text-zinc-700 overflow-auto">
-              {`AZURE_STORAGE_CONNECTION_STRING=...
-AZURE_STORAGE_CONTAINER=decisions`}
-            </pre>
+            <p>
+              The API backend itself needs{" "}
+              <code className="text-xs bg-zinc-100 px-1 rounded">
+                AZURE_STORAGE_CONNECTION_STRING
+              </code>{" "}
+              configured. See the <code className="text-xs bg-zinc-100 px-1 rounded">api/.env.example</code> file.
+            </p>
           </div>
         </section>
       )}
@@ -101,53 +104,4 @@ function providerLabel(provider: string): string {
     github: "GitHub",
   }
   return map[provider] ?? provider
-}
-
-function getStorageInfo(provider: string): {
-  name: string
-  location: string
-  configured: boolean
-  message: string
-} {
-  if (provider === "google") {
-    return {
-      name: "Google Drive",
-      location: "Observable Decisions folder",
-      configured: true,
-      message:
-        'Your decisions are stored in a folder named "Observable Decisions" in your Google Drive.',
-    }
-  }
-  if (provider === "microsoft-entra-id" || provider === "azure-ad") {
-    return {
-      name: "OneDrive",
-      location: "Apps/Observable Decisions",
-      configured: true,
-      message:
-        'Your decisions are stored in the "Observable Decisions" folder in your OneDrive.',
-    }
-  }
-  if (process.env.AWS_S3_BUCKET) {
-    return {
-      name: "AWS S3",
-      location: `s3://${process.env.AWS_S3_BUCKET}`,
-      configured: true,
-      message: `Decisions are stored in S3 bucket "${process.env.AWS_S3_BUCKET}" under your user prefix.`,
-    }
-  }
-  if (process.env.AZURE_STORAGE_CONNECTION_STRING) {
-    return {
-      name: "Azure Blob Storage",
-      location: process.env.AZURE_STORAGE_CONTAINER ?? "decisions",
-      configured: true,
-      message: "Decisions are stored in Azure Blob Storage.",
-    }
-  }
-  return {
-    name: "Not configured",
-    location: "—",
-    configured: false,
-    message:
-      "No storage backend is available for your account. Sign in with Google or Microsoft for automatic storage, or configure S3/Azure via environment variables.",
-  }
 }

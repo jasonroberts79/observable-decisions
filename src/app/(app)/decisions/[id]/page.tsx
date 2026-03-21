@@ -1,5 +1,4 @@
 import { auth } from "@/auth"
-import { getStorageAdapter } from "@/lib/storage"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import ReactMarkdown from "react-markdown"
@@ -8,8 +7,11 @@ import { StatusBadge } from "@/components/status-badge"
 import { ShareButton } from "@/components/share-button"
 import { formatDate } from "@/lib/utils"
 import { Edit, ArrowLeft } from "lucide-react"
+import type { Decision } from "@/lib/decisions/schema"
 
 export const dynamic = "force-dynamic"
+
+const API_BASE = process.env.DECISIONS_API_URL ?? "http://localhost:8000"
 
 export default async function DecisionPage({
   params,
@@ -20,10 +22,14 @@ export default async function DecisionPage({
   const session = await auth()
   if (!session) return null
 
-  let decision
+  let decision: Decision
   try {
-    const adapter = getStorageAdapter(session)
-    decision = await adapter.get(id)
+    const res = await fetch(`${API_BASE}/api/decisions/${id}`, {
+      headers: { "x-user-email": session.user?.email ?? "" },
+      cache: "no-store",
+    })
+    if (!res.ok) throw new Error(`Not found`)
+    decision = await res.json()
   } catch {
     notFound()
   }

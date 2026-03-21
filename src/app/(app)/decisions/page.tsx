@@ -1,24 +1,30 @@
 import { auth } from "@/auth"
-import { getStorageAdapter } from "@/lib/storage"
 import { DecisionList } from "@/components/decision-list"
 import type { DecisionMeta } from "@/lib/decisions/schema"
 import Link from "next/link"
 import { Plus } from "lucide-react"
+import { headers } from "next/headers"
 
 export const dynamic = "force-dynamic"
+
+const API_BASE = process.env.DECISIONS_API_URL ?? "http://localhost:8000"
 
 export default async function DecisionsPage() {
   const session = await auth()
   if (!session) return null
 
   let decisions: DecisionMeta[] = []
-  let storageError: string | null = null
+  let fetchError: string | null = null
 
   try {
-    const adapter = getStorageAdapter(session)
-    decisions = await adapter.list()
+    const res = await fetch(`${API_BASE}/api/decisions`, {
+      headers: { "x-user-email": session.user?.email ?? "" },
+      cache: "no-store",
+    })
+    if (!res.ok) throw new Error(`API responded with ${res.status}`)
+    decisions = await res.json()
   } catch (err) {
-    storageError = String(err)
+    fetchError = String(err)
   }
 
   return (
@@ -39,15 +45,14 @@ export default async function DecisionsPage() {
         </Link>
       </div>
 
-      {storageError ? (
+      {fetchError ? (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <p className="font-medium">Storage not configured</p>
-          <p className="mt-1 text-red-600">{storageError}</p>
+          <p className="font-medium">Could not load decisions</p>
+          <p className="mt-1 text-red-600">{fetchError}</p>
           <p className="mt-2">
-            <a href="/settings" className="underline">
-              Go to Settings
-            </a>{" "}
-            to configure your storage backend.
+            Make sure the API backend is running and{" "}
+            <code className="text-xs bg-red-100 px-1 rounded">DECISIONS_API_URL</code>{" "}
+            is set correctly.
           </p>
         </div>
       ) : (
