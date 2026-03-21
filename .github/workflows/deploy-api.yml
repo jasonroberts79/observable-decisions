@@ -70,7 +70,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --no-dev --link-mode=copy
-          ren .venv .python-packages
+          mv .venv .python-packages
 
       - name: Log in to Azure
         uses: azure/login@v2
