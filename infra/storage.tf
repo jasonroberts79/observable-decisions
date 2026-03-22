@@ -13,7 +13,7 @@ resource "azurerm_storage_account" "decisions" {
   public_network_access_enabled = true
 
   network_rules {
-    default_action = "Deny"
+    default_action = "Allow"
     bypass         = ["AzureServices"]
   }
 
