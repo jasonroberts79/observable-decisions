@@ -14,3 +14,17 @@ resource "azurerm_key_vault" "main" {
 
   tags = {}
 }
+
+resource "azurerm_key_vault_access_policy" "default_access_policy" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id = var.tenant_id
+  object_id = azurerm_static_web_app.observable_decisions.identity[0].principal_id
+
+  key_permissions = [
+    "Get",
+  ]
+
+  secret_permissions = [
+    "Get",
+  ]
+}

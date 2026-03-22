@@ -86,7 +86,17 @@ resource "azurerm_static_web_app" "observable_decisions" {
   resource_group_name = azurerm_resource_group.main.name
   sku_tier            = "Standard"
   sku_size            = "Standard"
-
+  identity {
+    type = "SystemAssigned"
+  }
+  app_settings = {
+    "GITHUB-CLIENT-ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-ID)"
+    "GITHUB-CLIENT-SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-SECRET)"
+    "GOOGLE-CLIENT-ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-ID)"
+    "GOOGLE-CLIENT-SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-SECRET)"
+    "AAD-CLIENT-ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=AAD-CLIENT-ID)"
+    "AAD-CLIENT-SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=AAD-CLIENT-SECRET)"
+  }
   tags = {}
   lifecycle {
     ignore_changes = [ repository_branch, repository_url ]
