@@ -52,10 +52,17 @@ jobs:
         run: |
           $swa = az staticwebapp backends show -n ${{ env.AZURE_SWA_NAME }} -g ${{ env.AZURE_RESOURCE_GROUP }} | ConvertFrom-Json
           $funcApp = az functionapp show -n ${{ env.AZURE_FUNCTIONAPP_NAME }} -g ${{ env.AZURE_RESOURCE_GROUP }} | ConvertFrom-Json
-          if($null -eq $swa -or $swa.backendResourceId -ne $funcApp.id) {
+          $isLinked = $true
+          if($null -eq $swa) {
+            $isLinked = $false
+          } elseif($swa.backendResourceId -ne $funcApp.id) {
             az staticwebapp backends unlink `
               --name ${{ env.AZURE_SWA_NAME }} `
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
+            $isLinked = $false
+          }
+          
+          if(-not $isLinked) {
             az staticwebapp backends link `
               --name ${{ env.AZURE_SWA_NAME }} `
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
