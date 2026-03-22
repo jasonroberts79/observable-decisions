@@ -10,10 +10,6 @@ output "function_app_default_hostname" {
   value = azurerm_function_app_flex_consumption.observable_api.default_hostname
 }
 
-output "apim_gateway_url" {
-  value = azurerm_api_management.main.gateway_url
-}
-
 output "storage_account_name" {
   value = azurerm_storage_account.decisions.name
 }

@@ -20,7 +20,6 @@ resource "azurerm_function_app_flex_consumption" "observable_api" {
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.observable_decisions.connection_string
     "AZURE_STORAGE_CONNECTION_STRING"       = azurerm_storage_account.decisions.primary_connection_string
     "AZURE_STORAGE_CONTAINER"               = "decisions"
-    "DEPLOYMENT_STORAGE_CONNECTION_STRING"   = azurerm_storage_account.decisions.primary_connection_string
   }
   client_certificate_enabled         = false  
   client_certificate_mode            = "Required"
@@ -45,7 +44,6 @@ resource "azurerm_function_app_flex_consumption" "observable_api" {
   virtual_network_subnet_id                      = azurerm_subnet.app.id
   webdeploy_publish_basic_authentication_enabled = true  
   site_config {
-    api_management_api_id                         = "${azurerm_api_management.main.id}/apis/observable-api"
     container_registry_use_managed_identity       = false
     default_documents                             = ["Default.htm", "Default.html", "Default.asp", "index.htm", "index.html", "iisstart.htm", "default.aspx", "index.php"]
     elastic_instance_minimum                      = 0
@@ -72,6 +70,7 @@ resource "azurerm_function_app_flex_consumption" "observable_api" {
     ignore_changes = [
       # Deployment-managed settings that change on each deploy
       app_settings["AzureWebJobsStorage"],
+      site_config["application_insights_connection_string"]
     ]
   }  
 }
@@ -90,6 +89,7 @@ resource "azurerm_static_web_app" "observable_decisions" {
     type = "SystemAssigned"
   }
   app_settings = {
+    "VITE_DECISIONS_API_URL" = azurerm_function_app_flex_consumption.observable_api.default_hostname
     "GITHUB_CLIENT_ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-ID)"
     "GITHUB_CLIENT_SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-SECRET)"
     "GOOGLE_CLIENT_ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-ID)"
