@@ -6,15 +6,11 @@ on:
     paths:
       - "api/**"
       - ".github/workflows/deploy-api.yml"
-    paths-ignore:
-      - "**/*.md"
   pull_request:
     branches: [main]
     paths:
       - "api/**"
       - ".github/workflows/deploy-api.yml"
-    paths-ignore:
-      - "**/*.md"
   workflow_dispatch:
 
 env:
