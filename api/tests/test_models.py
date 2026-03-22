@@ -119,9 +119,9 @@ class TestDecision:
             id="d1",
             title="Test",
             date="2026-01-01",
-            created_at="2026-01-01T00:00:00Z",
-            updated_at="2026-01-01T00:00:00Z",
-            created_by="bob",
+            createdAt="2026-01-01T00:00:00Z",
+            updatedAt="2026-01-01T00:00:00Z",
+            createdBy="bob",
         )
         assert d.created_at == "2026-01-01T00:00:00Z"
 

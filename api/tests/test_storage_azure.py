@@ -47,10 +47,6 @@ def _make_backend() -> AzureBlobBackend:
         mock_service = MagicMock()
         MockServiceClient.from_connection_string.return_value = mock_service
 
-        mock_container = MagicMock()
-        mock_container.exists.return_value = True
-        mock_service.get_container_client.return_value = mock_container
-
         backend = AzureBlobBackend(
             connection_string="DefaultEndpointsProtocol=https;AccountName=test;AccountKey=dGVzdA==;EndpointSuffix=core.windows.net",
             container="decisions",
@@ -89,7 +85,8 @@ class TestGet:
         mock_download.readall.return_value = _json_bytes(decision)
         mock_blob_client.download_blob.return_value = mock_download
 
-        backend._service.get_container_client.return_value.get_blob_client.return_value = mock_blob_client
+        mock_container = backend._service.get_container_client.return_value
+        mock_container.get_blob_client.return_value = mock_blob_client
 
         result = await backend.get("users/test/", "abc123")
         assert result.id == "abc123"

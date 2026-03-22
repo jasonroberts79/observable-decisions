@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from typing import AsyncGenerator
 
 from models import Decision, DecisionMeta, to_meta
 from storage.base import StorageBackend
@@ -68,7 +69,7 @@ def app(memory_backend: MemoryBackend):
 
 
 @pytest.fixture()
-async def client(app) -> AsyncClient:
+async def client(app) -> AsyncGenerator[AsyncClient, None]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
