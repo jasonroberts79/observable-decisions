@@ -14,7 +14,8 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
-
+  AZURE_SWA_NAME: ${{ vars.AZURE_SWA_NAME }}
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
 jobs:
   deploy_api:
     name: Deploy API to Azure Functions
@@ -46,6 +47,21 @@ jobs:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: api
           remote-build: true
+      - name: Link to front-end
+        shell: pwsh
+        run: |
+          $swa = az staticwebapp backends show -n ${{ env.AZURE_SWA_NAME }} -g ${{ env.AZURE_RESOURCE_GROUP }} | ConvertFrom-Json
+          $funcApp = az functionapp show -n ${{ env.AZURE_FUNCTIONAPP_NAME }} -g ${{ env.AZURE_RESOURCE_GROUP }} | ConvertFrom-Json
+          if($null -eq $swa -or $swa.backendResourceId -ne $funcApp.id) {
+            az staticwebapp backends unlink `
+              --name ${{ env.AZURE_SWA_NAME }} `
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
+            az staticwebapp backends link `
+              --name ${{ env.AZURE_SWA_NAME }} `
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
+              --backend-resource-id $funcApp.id `
+              --backend-region eastus2
+          }
 
   test_api:
     name: Lint & Test API

@@ -76,11 +76,11 @@ resource "azurerm_function_app_flex_consumption" "observable_api" {
 }
 
 # =============================================================================
-# Static Web App: observable-decicions (note: original name has typo)
+# Static Web App: observable-decisions (note: original name has typo)
 # =============================================================================
 
 resource "azurerm_static_web_app" "observable_decisions" {
-  name                = "observable-decicions"
+  name                = "observable-decisions"
   location            = var.location_primary
   resource_group_name = azurerm_resource_group.main.name
   sku_tier            = "Standard"
@@ -101,12 +101,3 @@ resource "azurerm_static_web_app" "observable_decisions" {
     ignore_changes = [ repository_branch, repository_url ]
   }
 }
-
-# NOTE: The linked backend registration between the Static Web App and the
-# Function App (observable-api) is configured outside of Terraform.
-# To link them, use:
-#   az staticwebapp backends link \
-#     --name observable-decicions \
-#     --resource-group myResourceGroup \
-#     --backend-resource-id <function-app-resource-id> \
-#     --backend-region eastus2
