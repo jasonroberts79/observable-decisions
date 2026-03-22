@@ -48,7 +48,7 @@ resource "azurerm_function_app_flex_consumption" "observable_api" {
     api_management_api_id                         = "${azurerm_api_management.main.id}/apis/observable-api"
     container_registry_use_managed_identity       = false
     default_documents                             = ["Default.htm", "Default.html", "Default.asp", "index.htm", "index.html", "iisstart.htm", "default.aspx", "index.php"]
-    elastic_instance_minimum                      = 1
+    elastic_instance_minimum                      = 0
     http2_enabled                                 = true
     ip_restriction_default_action                 = "Deny"
     load_balancing_mode                           = "LeastRequests"
@@ -90,12 +90,12 @@ resource "azurerm_static_web_app" "observable_decisions" {
     type = "SystemAssigned"
   }
   app_settings = {
-    "GITHUB-CLIENT-ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-ID)"
-    "GITHUB-CLIENT-SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-SECRET)"
-    "GOOGLE-CLIENT-ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-ID)"
-    "GOOGLE-CLIENT-SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-SECRET)"
-    "AAD-CLIENT-ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=AAD-CLIENT-ID)"
-    "AAD-CLIENT-SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=AAD-CLIENT-SECRET)"
+    "GITHUB_CLIENT_ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-ID)"
+    "GITHUB_CLIENT_SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-SECRET)"
+    "GOOGLE_CLIENT_ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-ID)"
+    "GOOGLE_CLIENT_SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-SECRET)"
+    "AAD_CLIENT_ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=AAD-CLIENT-ID)"
+    "AAD_CLIENT_SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=AAD-CLIENT-SECRET)"
   }
   tags = {}
   lifecycle {
