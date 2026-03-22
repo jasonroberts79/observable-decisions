@@ -45,11 +45,7 @@ export function DecisionsPage() {
           <p className="font-medium">Could not load decisions</p>
           <p className="mt-1 text-red-600">{fetchError}</p>
           <p className="mt-2">
-            Make sure the API backend is running and{" "}
-            <code className="text-xs bg-red-100 px-1 rounded">
-              VITE_DECISIONS_API_URL
-            </code>{" "}
-            is set correctly.
+            Make sure the API backend is running and reachable.
           </p>
         </div>
       ) : (

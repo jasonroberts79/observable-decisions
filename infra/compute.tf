@@ -89,7 +89,6 @@ resource "azurerm_static_web_app" "observable_decisions" {
     type = "SystemAssigned"
   }
   app_settings = {
-    "VITE_DECISIONS_API_URL" = azurerm_function_app_flex_consumption.observable_api.default_hostname
     "GITHUB_CLIENT_ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-ID)"
     "GITHUB_CLIENT_SECRET" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GITHUB-CLIENT-SECRET)"
     "GOOGLE_CLIENT_ID" = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.main.name};SecretName=GOOGLE-CLIENT-ID)"

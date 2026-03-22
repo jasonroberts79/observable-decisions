@@ -1,13 +1,10 @@
-import { CheckCircle, AlertCircle } from "lucide-react"
+import { CheckCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { providerLabel } from "@/lib/auth"
 
 export function SettingsPage() {
   const { user } = useAuth()
   if (!user) return null
-
-  const apiUrl = import.meta.env.VITE_DECISIONS_API_URL ?? "(same origin)"
-  const apiConfigured = !!import.meta.env.VITE_DECISIONS_API_URL
 
   return (
     <div className="space-y-8">
@@ -36,25 +33,11 @@ export function SettingsPage() {
         </h2>
         <div className="rounded-md border border-zinc-200 bg-white divide-y divide-zinc-100">
           <Row label="Backend" value="Decisions API (FastAPI)" />
-          <Row label="URL" value={apiUrl} />
+          <Row label="URL" value="(same origin)" />
         </div>
-        <div
-          className={`flex items-start gap-2 rounded-md border px-3 py-2.5 text-sm ${
-            apiConfigured
-              ? "border-green-200 bg-green-50 text-green-800"
-              : "border-amber-200 bg-amber-50 text-amber-800"
-          }`}
-        >
-          {apiConfigured ? (
-            <CheckCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          ) : (
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          )}
-          <p>
-            {apiConfigured
-              ? "The API backend is configured. Decisions are stored via the API."
-              : "VITE_DECISIONS_API_URL is not set \u2014 API calls will be sent to the same origin. Set it to point to your API backend."}
-          </p>
+        <div className="flex items-start gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2.5 text-sm text-green-800">
+          <CheckCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <p>The API backend is linked. Decisions are stored via the API.</p>
         </div>
       </section>
     </div>

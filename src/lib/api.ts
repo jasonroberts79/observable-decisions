@@ -1,7 +1,5 @@
 import type { Decision, DecisionMeta } from "@/lib/decisions/schema"
 
-const API_BASE = import.meta.env.VITE_DECISIONS_API_URL ?? ""
-
 function headers(email: string): HeadersInit {
   return {
     "Content-Type": "application/json",
@@ -10,7 +8,7 @@ function headers(email: string): HeadersInit {
 }
 
 export async function listDecisions(email: string): Promise<DecisionMeta[]> {
-  const res = await fetch(`${API_BASE}/api/decisions`, {
+  const res = await fetch("/api/decisions", {
     headers: headers(email),
   })
   if (!res.ok) throw new Error(`API responded with ${res.status}`)
@@ -21,7 +19,7 @@ export async function getDecision(
   id: string,
   email: string,
 ): Promise<Decision> {
-  const res = await fetch(`${API_BASE}/api/decisions/${id}`, {
+  const res = await fetch(`/api/decisions/${id}`, {
     headers: headers(email),
   })
   if (!res.ok) throw new Error(`Not found`)
@@ -32,7 +30,7 @@ export async function createDecision(
   body: Record<string, unknown>,
   email: string,
 ): Promise<Decision> {
-  const res = await fetch(`${API_BASE}/api/decisions`, {
+  const res = await fetch("/api/decisions", {
     method: "POST",
     headers: headers(email),
     body: JSON.stringify(body),
@@ -49,7 +47,7 @@ export async function updateDecision(
   body: Record<string, unknown>,
   email: string,
 ): Promise<Decision> {
-  const res = await fetch(`${API_BASE}/api/decisions/${id}`, {
+  const res = await fetch(`/api/decisions/${id}`, {
     method: "PUT",
     headers: headers(email),
     body: JSON.stringify(body),
@@ -66,7 +64,7 @@ export async function shareDecision(
   email: string,
   shareEmail?: string,
 ): Promise<{ url: string }> {
-  const res = await fetch(`${API_BASE}/api/decisions/${id}/share`, {
+  const res = await fetch(`/api/decisions/${id}/share`, {
     method: "POST",
     headers: headers(email),
     body: JSON.stringify(shareEmail ? { email: shareEmail } : {}),
