@@ -47,6 +47,8 @@ jobs:
           github_id_token: ${{ steps.idtoken.outputs.result }}
           api_location: ""
           output_location: "dist"
+        env:
+          ACTIONS_STEP_DEBUG: true
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
