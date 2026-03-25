@@ -14,7 +14,7 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_NAME: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
-  AZURE_SWA_NAME: ${{ vars.AZURE_SWA_NAME }}
+  AZURE_SWA_NAME: "observable-decisions"
   AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
 jobs:
   deploy_api:
