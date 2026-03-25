@@ -1,0 +1,66 @@
+name: Azure Static Web Apps CI/CD
+
+on:
+  push:
+    paths:
+      - "app/**"
+      - ".github/workflows/frontend.yml"
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths:
+      - "app/**"
+      - ".github/workflows/frontend.yml"
+    branches:
+      - main
+
+env:
+  STATICWEBAPPNAME: "observable-decisions"
+
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    permissions:
+       id-token: write
+       contents: read
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
+      - name: Install OIDC Client from Core Package
+        run: npm install @actions/core@1.6.0 @actions/http-client
+      - name: Get Id Token
+        uses: actions/github-script@v6
+        id: idtoken
+        with:
+           script: |
+               const coredemo = require('@actions/core')
+               return await coredemo.getIDToken()
+           result-encoding: string
+      - name: Build
+        run: |
+          npm run build
+          cp staticwebapp.config.json dist/
+      - name: Log in to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Get API key 🔑
+        id: static_web_app_apikey
+        uses: azure/CLI@v3
+        with:
+          inlineScript: |
+            APIKEY=$(az staticwebapp secrets list --name '${{ env.STATICWEBAPPNAME }}' | jq -r '.properties.apiKey')
+            echo "APIKEY=$APIKEY" >> $GITHUB_OUTPUT
+      - name: Deploy
+        shell: pwsh
+        run: |
+          npm install -D @azure/static-web-apps-cli
+          $SWA_CLI_DEPLOYMENT_TOKEN = "${{ steps.static_web_app_apikey.outputs.APIKEY }}"
+          swa deploy dist/ --env production -n ${{ env.STATICWEBAPPNAME }}
