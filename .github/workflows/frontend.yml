@@ -44,6 +44,7 @@ jobs:
       - name: Build
         working-directory: app
         run: |
+          npm install
           npm run build
           cp staticwebapp.config.json dist/
       - name: Log in to Azure
