@@ -64,6 +64,6 @@ jobs:
         working-directory: app
         shell: pwsh
         run: |
-          npm install -D @azure/static-web-apps-cli
+          npm install -g @azure/static-web-apps-cli
           $SWA_CLI_DEPLOYMENT_TOKEN = "${{ steps.static_web_app_apikey.outputs.APIKEY }}"
           swa deploy dist/ --env production -n ${{ env.STATICWEBAPPNAME }}
