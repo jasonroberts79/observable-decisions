@@ -42,6 +42,7 @@ jobs:
                return await coredemo.getIDToken()
            result-encoding: string
       - name: Build
+        working-directory: app
         run: |
           npm run build
           cp staticwebapp.config.json dist/
@@ -59,6 +60,7 @@ jobs:
             APIKEY=$(az staticwebapp secrets list --name '${{ env.STATICWEBAPPNAME }}' | jq -r '.properties.apiKey')
             echo "APIKEY=$APIKEY" >> $GITHUB_OUTPUT
       - name: Deploy
+        working-directory: app
         shell: pwsh
         run: |
           npm install -D @azure/static-web-apps-cli
