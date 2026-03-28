@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Observable Decisions
+
+A full-stack decision management platform for recording, tracking, and sharing architectural and business decisions in [ADR](https://adr.github.io/) format.
+
+## Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19 + Vite + TypeScript, hosted on Firebase Hosting |
+| Backend | Python FastAPI, containerised and deployed to Cloud Run |
+| Storage | Google Cloud Storage (JSON blobs, per-user isolation) |
+| Auth | Firebase Authentication (Google + GitHub) |
+| IaC | Terraform (GCP provider) |
+| CI/CD | GitHub Actions with Workload Identity Federation |
+
+## Project Layout
+
+```
+observable-decisions/
+├── app/          # React SPA
+├── api/          # FastAPI backend
+├── infra/        # Terraform
+└── .github/      # CI/CD workflows
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- Python 3.12+ with [uv](https://github.com/astral-sh/uv)
+- A Firebase project with Authentication enabled (Google + GitHub providers)
+
+### Frontend
+
+Copy the example env file and fill in your Firebase project config (Project Settings → Your apps → Web app):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp app/.env.example app/.env
+# edit app/.env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```bash
+cd app
+npm install
+npm run dev      # http://localhost:5173
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Backend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cd api
+cp .env.example .env
+# set GCS_BUCKET_NAME (and optionally FIREBASE_PROJECT_ID) in .env
+uv sync
+uv run uvicorn main:app --reload   # http://localhost:8000
+```
 
-## Learn More
+> When `FIREBASE_PROJECT_ID` is not set, the backend falls back to accepting the `X-User-Email` header for local development without Firebase.
 
-To learn more about Next.js, take a look at the following resources:
+### Running tests
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd api
+uv run pytest
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [TECHNICAL_DOCS.md](./TECHNICAL_DOCS.md) for the full deployment guide.

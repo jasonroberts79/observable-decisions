@@ -1,15 +1,12 @@
 # Observable Decisions — Technical Documentation
 
-A full-stack decision management platform for recording, tracking, and sharing architectural and business decisions. Built with a React SPA frontend and a Python FastAPI backend, deployed on Azure.
+A full-stack decision management platform for recording, tracking, and sharing architectural and business decisions. Built with a React SPA frontend and a Python FastAPI backend, deployed on GCP.
 
 ---
 
 ## Table of Contents
 
 - [Tech Stack](#tech-stack)
-  - [Frontend](#frontend)
-  - [Backend](#backend)
-  - [Infrastructure & Deployment](#infrastructure--deployment)
 - [Project Structure](#project-structure)
 - [Data Model](#data-model)
 - [API Reference](#api-reference)
@@ -31,49 +28,46 @@ A full-stack decision management platform for recording, tracking, and sharing a
 |---|---|---|
 | **React** | ^19.1 | UI component framework |
 | **React Router DOM** | ^7.6 | Client-side routing for the SPA |
-| **TypeScript** | ^5 | Static typing for the frontend codebase |
+| **TypeScript** | ^5 | Static typing |
 | **Vite** | ^6.3 | Dev server and production bundler |
-| **Tailwind CSS** | ^4 | Utility-first CSS framework for styling |
-| **@tailwindcss/typography** | ^0.5 | Tailwind plugin for prose/markdown content styling |
-| **@tailwindcss/postcss** | ^4 | PostCSS integration for Tailwind |
+| **Tailwind CSS** | ^4 | Utility-first CSS framework |
+| **Firebase** | ^11.0 | Firebase Authentication SDK |
 | **Zod** | ^4.3 | Runtime schema validation for Decision/Option types |
-| **React Markdown** | ^10.1 | Renders Markdown content (context, decision, consequences fields) |
-| **remark-gfm** | ^4.0 | GitHub Flavored Markdown support (tables, task lists, strikethrough) |
-| **rehype-sanitize** | ^6.0 | Sanitizes rendered Markdown HTML to prevent XSS |
-| **Lucide React** | ^0.577 | Icon library used throughout the UI |
-| **date-fns** | ^4.1 | Date formatting and manipulation |
-| **nanoid** | ^5.1 | Generates compact unique IDs (used for Options) |
-| **Fuse.js** | ^7.1 | Client-side fuzzy search over decisions |
-| **clsx** | ^2.1 | Conditional CSS class name construction |
-| **tailwind-merge** | ^3.5 | Intelligently merges Tailwind class names to avoid conflicts |
-| **@vitejs/plugin-react** | ^4.5 | Vite plugin enabling React Fast Refresh and JSX transform |
-| **ESLint** | ^9 | JavaScript/TypeScript linting |
+| **React Markdown** | ^10.1 | Renders Markdown content |
+| **remark-gfm** | ^4.0 | GitHub Flavored Markdown support |
+| **rehype-sanitize** | ^6.0 | Sanitises rendered Markdown HTML to prevent XSS |
+| **Lucide React** | ^0.577 | Icon library |
+| **date-fns** | ^4.1 | Date formatting |
+| **nanoid** | ^5.1 | Compact unique IDs for Options |
+| **Fuse.js** | ^7.1 | Client-side fuzzy search |
+| **clsx** / **tailwind-merge** | ^2.1 / ^3.5 | Conditional and merged CSS class names |
 
 ### Backend
 
 | Library / Tool | Version | Purpose |
 |---|---|---|
-| **FastAPI** | >=0.135 | Async Python web framework for the REST API |
-| **Pydantic** | >=2.12 | Data validation and serialization for request/response models |
-| **Uvicorn** | >=0.42 | ASGI server for running FastAPI locally |
-| **azure-functions** | >=1.24 | Azure Functions Python SDK; wraps FastAPI as an ASGI function app |
-| **azure-storage-blob** | >=12.28 | Azure Blob Storage client for persisting decision records |
-| **python-dotenv** | >=1.2 | Loads `.env` files into environment variables for local development |
-| **pytest** | >=9.0 | Test framework (dev dependency) |
-| **pytest-asyncio** | >=1.3 | Async test support for pytest (dev dependency) |
-| **httpx** | >=0.28 | Async HTTP client used to test FastAPI routes via `TestClient` (dev dependency) |
+| **FastAPI** | >=0.135 | Async Python web framework |
+| **Pydantic** | >=2.12 | Request/response model validation and serialisation |
+| **Uvicorn** | >=0.42 | ASGI server |
+| **firebase-admin** | >=6.0 | Verifies Firebase ID tokens on incoming requests |
+| **google-cloud-storage** | >=2.0 | GCS client for persisting decision records |
+| **python-dotenv** | >=1.2 | Loads `.env` files for local development |
+| **pytest** / **pytest-asyncio** / **httpx** | dev | Testing |
 
-**Python version**: >=3.12
-**Package manager**: [uv](https://github.com/astral-sh/uv)
+**Python version**: >=3.12 · **Package manager**: [uv](https://github.com/astral-sh/uv)
 
 ### Infrastructure & Deployment
 
 | Service / Tool | Purpose |
 |---|---|
-| **Azure Static Web Apps** | Hosts the frontend SPA with built-in CDN and auth |
-| **Azure Functions** | Hosts the backend API (Python v2 programming model, ASGI) |
-| **Azure Blob Storage** | Persists decision records as JSON blobs |
-| **GitHub Actions** | CI/CD pipelines for both frontend and backend |
+| **Firebase Hosting** | Hosts the frontend SPA with built-in CDN |
+| **Cloud Run** | Hosts the containerised FastAPI backend (Docker) |
+| **Google Cloud Storage** | Persists decision records as JSON objects |
+| **Artifact Registry** | Stores Docker images for Cloud Run |
+| **Firebase Authentication** | Manages user identity (Google + GitHub OAuth) |
+| **Workload Identity Federation** | Keyless authentication from GitHub Actions to GCP |
+| **Terraform** | Provisions all GCP infrastructure |
+| **GitHub Actions** | CI/CD pipelines for frontend, backend, and infrastructure |
 
 ---
 
@@ -81,65 +75,68 @@ A full-stack decision management platform for recording, tracking, and sharing a
 
 ```
 observable-decisions/
-├── src/                              # Frontend — React SPA
-│   ├── main.tsx                      # App entry point (React root, BrowserRouter, AuthProvider)
-│   ├── App.tsx                       # Route definitions and auth gating
-│   ├── components/                   # Reusable UI components
-│   │   ├── decision-form.tsx         # Create/edit form for decisions
-│   │   ├── decision-list.tsx         # Searchable, filterable list of decisions
-│   │   ├── markdown-field.tsx        # Markdown editor with live preview
-│   │   ├── nav.tsx                   # Sidebar navigation
-│   │   ├── options-editor.tsx        # Inline editor for decision options (pros/cons)
-│   │   ├── share-button.tsx          # Share dialog component
-│   │   ├── status-badge.tsx          # Colored status indicator badge
-│   │   └── tag-input.tsx             # Tag input with autocomplete
-│   ├── pages/                        # Route-level page components
-│   │   ├── DecisionsPage.tsx         # Decision list view
-│   │   ├── DecisionDetailPage.tsx    # Read-only decision detail
-│   │   ├── EditDecisionPage.tsx      # Edit existing decision
-│   │   ├── NewDecisionPage.tsx       # Create new decision
-│   │   ├── SettingsPage.tsx          # User settings
-│   │   └── SignInPage.tsx            # OAuth sign-in page
-│   ├── layouts/
-│   │   └── AppLayout.tsx             # Shell layout with sidebar navigation
-│   └── lib/                          # Shared utilities and logic
-│       ├── decisions/
-│       │   └── schema.ts             # Zod schemas (Decision, Option, DecisionStatus)
-│       ├── auth-context.tsx          # React context provider for auth state
-│       ├── auth.ts                   # Auth helpers (Azure SWA /.auth/me integration)
-│       ├── api.ts                    # API client (fetch wrappers for all endpoints)
-│       └── utils.ts                  # General utilities (cn helper for class merging)
+├── app/                              # Frontend — React SPA
+│   ├── src/
+│   │   ├── main.tsx                  # App entry point
+│   │   ├── App.tsx                   # Route definitions and auth gating
+│   │   ├── components/               # Reusable UI components
+│   │   │   ├── decision-form.tsx     # Create/edit form
+│   │   │   ├── decision-list.tsx     # Searchable, filterable list
+│   │   │   ├── markdown-field.tsx    # Markdown editor with live preview
+│   │   │   ├── nav.tsx               # Sidebar navigation
+│   │   │   ├── options-editor.tsx    # Inline editor for options (pros/cons)
+│   │   │   ├── share-button.tsx      # Share dialog component
+│   │   │   ├── status-badge.tsx      # Coloured status indicator
+│   │   │   └── tag-input.tsx         # Tag input with autocomplete
+│   │   ├── pages/                    # Route-level page components
+│   │   │   ├── DecisionsPage.tsx
+│   │   │   ├── DecisionDetailPage.tsx
+│   │   │   ├── EditDecisionPage.tsx
+│   │   │   ├── NewDecisionPage.tsx
+│   │   │   ├── SettingsPage.tsx
+│   │   │   └── SignInPage.tsx
+│   │   ├── layouts/
+│   │   │   └── AppLayout.tsx         # Shell layout with sidebar
+│   │   └── lib/
+│   │       ├── decisions/schema.ts   # Zod schemas (Decision, Option, Status)
+│   │       ├── firebase.ts           # Firebase app and auth instance
+│   │       ├── auth.ts               # Sign-in/out helpers (Firebase Auth)
+│   │       ├── auth-context.tsx      # React context for auth state
+│   │       ├── api.ts                # Typed fetch wrappers for all endpoints
+│   │       └── utils.ts              # General utilities
+│   ├── firebase.json                 # Firebase Hosting config + Cloud Run rewrite
+│   ├── .firebaserc                   # Firebase project binding
+│   └── package.json
 │
 ├── api/                              # Backend — Python FastAPI
-│   ├── main.py                       # FastAPI app factory and route definitions
-│   ├── models.py                     # Pydantic models (Decision, Option, request/response types)
-│   ├── function_app.py               # Azure Functions ASGI wrapper
+│   ├── main.py                       # App factory, auth dependency, route definitions
+│   ├── models.py                     # Pydantic models
 │   ├── storage/
-│   │   ├── __init__.py               # Re-exports AzureBlobBackend
+│   │   ├── __init__.py               # Re-exports GCSBackend
 │   │   ├── base.py                   # Abstract StorageBackend interface
-│   │   └── azure_blob.py             # Azure Blob Storage implementation
+│   │   └── gcs.py                    # Google Cloud Storage implementation
 │   ├── tests/
 │   │   ├── conftest.py               # Pytest fixtures, in-memory MemoryBackend
-│   │   ├── test_routes.py            # API route integration tests
+│   │   ├── test_routes.py            # Route integration tests
 │   │   ├── test_models.py            # Pydantic model validation tests
-│   │   └── test_storage_azure.py     # Azure storage backend tests
-│   ├── pyproject.toml                # Python dependencies (managed by uv)
-│   └── host.json                     # Azure Functions host configuration
+│   │   └── test_storage_azure.py     # Legacy Azure backend unit tests
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   └── pyproject.toml
 │
-├── .github/workflows/                # CI/CD
-│   ├── azure-static-web-apps-*.yml   # Frontend deployment pipeline
-│   └── deploy-api.yml                # Backend deployment pipeline
+├── infra/                            # Terraform — GCP infrastructure
+│   ├── main.tf                       # Provider config, GCS state backend
+│   ├── variables.tf
+│   ├── terraform.tfvars
+│   ├── compute.tf                    # Artifact Registry + Cloud Run
+│   ├── storage.tf                    # GCS decisions bucket
+│   ├── identity.tf                   # Service accounts + Workload Identity Federation
+│   └── outputs.tf
 │
-├── scripts/
-│   └── setup-oauth-settings.ps1      # PowerShell script for OAuth provider setup
-│
-├── index.html                        # HTML shell (Vite entry point)
-├── package.json                      # Frontend dependencies and scripts
-├── tsconfig.json                     # TypeScript configuration
-├── vite.config.ts                    # Vite bundler configuration
-├── postcss.config.mjs                # PostCSS / Tailwind CSS configuration
-├── staticwebapp.config.json          # Azure Static Web Apps routing and auth config
-└── .env.example                      # Template for required environment variables
+└── .github/workflows/
+    ├── backend.yml                   # Test + build Docker image + deploy to Cloud Run
+    ├── frontend.yml                  # Build + deploy to Firebase Hosting
+    └── infra.yml                     # Terraform apply
 ```
 
 ---
@@ -148,30 +145,25 @@ observable-decisions/
 
 ### Decision
 
-The core entity. Mirrored between frontend (Zod) and backend (Pydantic):
-
 | Field | Type | Description |
 |---|---|---|
 | `id` | string | Unique identifier (21-char hex) |
-| `title` | string | Decision title (required, min 1 char) |
+| `title` | string | Decision title (required) |
 | `status` | enum | `proposed`, `accepted`, `rejected`, `deprecated`, `superseded` |
 | `date` | string | Date of the decision (YYYY-MM-DD) |
-| `deciders` | string[] | People involved in making the decision |
-| `tags` | string[] | Organizational tags |
+| `deciders` | string[] | People involved |
+| `tags` | string[] | Organisational tags |
 | `context` | string | Background and motivation (Markdown) |
 | `decision` | string | The decision itself (Markdown) |
-| `consequences` | string | Expected outcomes and impacts (Markdown) |
+| `consequences` | string | Expected outcomes (Markdown) |
 | `options` | Option[] | Evaluated alternatives |
-| `supersededBy` | string? | ID of the decision that supersedes this one |
-| `shareToken` | string? | Token for shared access |
-| `sharedWith` | string[] | Email addresses the decision is shared with |
+| `supersededBy` | string? | ID of the superseding decision |
+| `sharedWith` | string[] | Emails the decision is shared with |
 | `createdAt` | string | ISO 8601 timestamp |
 | `updatedAt` | string | ISO 8601 timestamp |
 | `createdBy` | string | Email of the creator |
 
 ### Option
-
-A nested object within a Decision, representing one alternative that was evaluated:
 
 | Field | Type | Description |
 |---|---|---|
@@ -184,7 +176,7 @@ A nested object within a Decision, representing one alternative that was evaluat
 
 ### DecisionMeta
 
-A lightweight projection of Decision used for list views (omits `context`, `decision`, `consequences`, `options`, and other heavy fields).
+A lightweight projection of Decision used for list views — omits `context`, `decision`, `consequences`, and `options`.
 
 ---
 
@@ -194,43 +186,39 @@ Base path: `/api`
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/decisions` | List all decisions for the authenticated user (returns `DecisionMeta[]`) |
-| `POST` | `/api/decisions` | Create a new decision (returns the created `Decision`) |
+| `GET` | `/api/decisions` | List all decisions for the authenticated user (`DecisionMeta[]`) |
+| `POST` | `/api/decisions` | Create a new decision |
 | `GET` | `/api/decisions/{id}` | Get a single decision by ID |
 | `PUT` | `/api/decisions/{id}` | Merge-update an existing decision |
-| `DELETE` | `/api/decisions/{id}` | Delete a decision (returns 204) |
-| `POST` | `/api/decisions/{id}/share` | Generate a shareable URL for a decision |
+| `DELETE` | `/api/decisions/{id}` | Delete a decision (204) |
+| `POST` | `/api/decisions/{id}/share` | Generate a 7-day signed GCS URL |
 
-All endpoints accept an `x-user-email` header to identify the calling user. In production, this is populated by the frontend from the Azure SWA auth session.
+All endpoints require an `Authorization: Bearer <firebase-id-token>` header. In production the frontend obtains this token from the Firebase SDK and attaches it automatically. Locally, when `FIREBASE_PROJECT_ID` is not set, the `X-User-Email` header is accepted as a fallback.
 
 ---
 
 ## Authentication
 
-Authentication is handled by **Azure Static Web Apps built-in auth**, which provides OAuth integration without custom backend code.
+Authentication is provided by **Firebase Authentication**.
 
-### Supported Identity Providers
+### Supported Providers
 
-| Provider | Login Route | Config Setting Names |
-|---|---|---|
-| Microsoft (Azure AD) | `/.auth/login/aad` | `AAD_CLIENT_ID`, `AAD_CLIENT_SECRET` |
-| GitHub | `/.auth/login/github` | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
-| Google | `/.auth/login/google` | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| Provider | Firebase SDK call |
+|---|---|
+| Google | `signInWithPopup(auth, new GoogleAuthProvider())` |
+| GitHub | `signInWithPopup(auth, new GithubAuthProvider())` |
 
 ### Auth Flow
 
-1. Unauthenticated users are redirected to `/signin`
-2. User clicks a provider button, which navigates to `/.auth/login/{provider}`
-3. Azure SWA handles the OAuth flow and redirects back to `/decisions`
-4. The frontend calls `/.auth/me` to retrieve the `ClientPrincipal` (user identity)
-5. The user's email is sent to the API via the `x-user-email` header on every request
+1. Unauthenticated users are redirected to `/signin` by the `RequireAuth` wrapper in `App.tsx`
+2. User clicks a provider button; `signInWithPopup` handles the OAuth popup
+3. Firebase SDK returns a `User` object; `onAuthStateChanged` updates the React auth context
+4. On every API call the frontend calls `auth.currentUser.getIdToken()` and sends the result as `Authorization: Bearer <token>`
+5. The backend's `_get_current_user` FastAPI dependency verifies the token with the Firebase Admin SDK and returns the user's email
 
 ### Route Protection
 
-Configured in `staticwebapp.config.json`:
-- `/signin`, `/.auth/*`, `/assets/*`, `/favicon.ico` — accessible anonymously
-- All other routes — require `authenticated` role
-- Unauthenticated access returns a 302 redirect to `/signin`
+Handled entirely in the React app via the `RequireAuth` component — no server-side route restrictions. All `/api/**` traffic to the backend requires a valid Firebase ID token.
 
 ---
 
@@ -251,15 +239,15 @@ class StorageBackend(abc.ABC):
 
 | Backend | Location | Usage |
 |---|---|---|
-| `AzureBlobBackend` | `api/storage/azure_blob.py` | Production — stores decisions as JSON blobs in Azure Blob Storage |
-| `MemoryBackend` | `api/tests/conftest.py` | Testing — in-memory dict-based storage for fast, isolated tests |
+| `GCSBackend` | `api/storage/gcs.py` | Production — JSON objects in Google Cloud Storage |
+| `MemoryBackend` | `api/tests/conftest.py` | Testing — in-memory dict, no credentials required |
 
-### Blob Layout
+### Object Layout
 
 Decisions are stored as individual JSON files with per-user isolation:
 
 ```
-{container}/
+{bucket}/
   users/
     alice@example.com/
       abc123.json
@@ -268,7 +256,9 @@ Decisions are stored as individual JSON files with per-user isolation:
       ghi789.json
 ```
 
-Each blob is a serialized `Decision` object.
+### Signed URLs (Share Feature)
+
+The `share` endpoint generates a 7-day signed GCS URL using Application Default Credentials from the Cloud Run metadata server. Requires the Cloud Run service account to have `roles/iam.serviceAccountTokenCreator` on itself (provisioned by Terraform).
 
 ---
 
@@ -288,105 +278,163 @@ Defined in `src/App.tsx` using React Router v7:
 | `/decisions/:id/edit` | `EditDecisionPage` | Yes |
 | `/settings` | `SettingsPage` | Yes |
 
-### Auth Gating
+### API Proxying
 
-The `RequireAuth` wrapper component checks auth state from `AuthProvider` (React context). If the user is not authenticated, they are redirected to `/signin`.
+`firebase.json` rewrites `/api/**` requests to the `observable-api` Cloud Run service in `us-east4`. This means the frontend always calls same-origin `/api/…` URLs — no hardcoded Cloud Run URLs in the frontend code.
 
-### API Client
+### Auth Context
 
-`src/lib/api.ts` provides typed fetch wrappers for each API endpoint. The base URL is configurable via the `VITE_DECISIONS_API_URL` environment variable (defaults to same-origin).
-
-### Schema Validation
-
-Frontend Zod schemas in `src/lib/decisions/schema.ts` mirror the backend Pydantic models, ensuring consistent validation on both sides of the stack.
+`src/lib/auth-context.tsx` wraps `onAuthStateChanged` from Firebase and exposes `{ user: User | null, loading: boolean }` via React context. All components that need the current user call `useAuth()`.
 
 ---
 
 ## Running Locally
 
-### Frontend
-
-```bash
-npm install
-npm run dev          # Starts Vite dev server on http://localhost:3000
-```
-
 ### Backend
 
 ```bash
 cd api
-uv sync              # Install Python dependencies
-uvicorn main:app     # Starts FastAPI on http://localhost:8000
+uv sync
 ```
 
-Requires `AZURE_STORAGE_CONNECTION_STRING` to be set (or use `.env` file).
+Create `api/.env`:
+```
+GCS_BUCKET_NAME=your-bucket-name
+# Optional — omit to use X-User-Email header fallback instead of Firebase token verification
+FIREBASE_PROJECT_ID=observable-decisions
+```
 
-### Build Scripts
+```bash
+uv run uvicorn main:app --reload   # http://localhost:8000
+```
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | TypeScript compile + Vite production build to `dist/` |
-| `npm run preview` | Preview the production build locally |
-| `npm run lint` | Run ESLint |
+### Frontend
+
+Create `app/.env` (values from Firebase Console → Project Settings → Your apps):
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=observable-decisions.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=observable-decisions
+VITE_FIREBASE_STORAGE_BUCKET=observable-decisions.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+```bash
+cd app
+npm install
+npm run dev     # http://localhost:5173
+```
 
 ---
 
 ## Testing
 
-### Backend Tests
-
 ```bash
 cd api
-uv run pytest
+uv run pytest tests/ -v --tb=short
 ```
 
-Tests use an in-memory `MemoryBackend` so no Azure credentials are required. The test suite includes:
+Tests use an in-memory `MemoryBackend` — no GCP credentials required. The suite covers:
 
-- **Route tests** (`test_routes.py`) — integration tests exercising all API endpoints via httpx `AsyncClient`
-- **Model tests** (`test_models.py`) — Pydantic model validation
-- **Storage tests** (`test_storage_azure.py`) — Azure Blob Storage backend tests
+- **`test_routes.py`** — integration tests for all API endpoints via httpx `AsyncClient`
+- **`test_models.py`** — Pydantic model validation
+- **`test_storage_azure.py`** — unit tests for the legacy Azure Blob backend (kept for reference)
 
 ---
 
 ## Deployment
 
-### Frontend — Azure Static Web Apps
+### Initial Setup (one-time)
 
-Triggered on push to `main` (ignores changes under `api/`).
+1. **Create the Terraform state bucket:**
+   ```bash
+   gcloud storage buckets create gs://observable-decisions-tfstate \
+     --location=us-east4 --project=observable-decisions
+   ```
 
-1. Runs `npm run build` (TypeScript + Vite → `dist/`)
-2. Deploys the `dist/` folder to Azure Static Web Apps
-3. Routing is governed by `staticwebapp.config.json`
+2. **Provision GCP infrastructure:**
+   ```bash
+   cd infra
+   terraform init
+   terraform apply
+   ```
 
-Workflow: `.github/workflows/azure-static-web-apps-witty-sea-0fab1e70f.yml`
+3. **Capture Terraform outputs** — these go into GitHub Actions secrets:
+   ```bash
+   terraform output workload_identity_provider   # → GCP_WORKLOAD_IDENTITY_PROVIDER
+   terraform output github_actions_service_account  # → GCP_SERVICE_ACCOUNT
+   ```
 
-### Backend — Azure Functions
+4. **Set GitHub Actions secrets:**
 
-Triggered on push to `main` when `api/**` or the workflow file changes.
+   | Secret | Source |
+   |---|---|
+   | `GCP_WORKLOAD_IDENTITY_PROVIDER` | `terraform output workload_identity_provider` |
+   | `GCP_SERVICE_ACCOUNT` | `terraform output github_actions_service_account` |
+   | `VITE_FIREBASE_API_KEY` | Firebase Console → Project Settings |
+   | `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Console → Project Settings |
+   | `VITE_FIREBASE_PROJECT_ID` | Firebase Console → Project Settings |
+   | `VITE_FIREBASE_STORAGE_BUCKET` | Firebase Console → Project Settings |
+   | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase Console → Project Settings |
+   | `VITE_FIREBASE_APP_ID` | Firebase Console → Project Settings |
 
-1. Installs `uv` and exports dependencies to `requirements.txt`
-2. Removes `tests/` directory from the deployment package
-3. Deploys to Azure Functions via the official GitHub Action
-4. Uses OIDC federated identity for deployment authentication (no stored credentials)
+5. **Enable Firebase Auth providers** (Firebase Console → Authentication → Sign-in method):
+   - Google — enable, no extra config needed
+   - GitHub — enable, provide Client ID + Secret from a GitHub OAuth App (callback URL: `https://observable-decisions.firebaseapp.com/__/auth/handler`)
 
-Workflow: `.github/workflows/deploy-api.yml`
+### Backend — Cloud Run
 
-The Azure Functions wrapper (`api/function_app.py`) exposes the FastAPI app as an ASGI function with a catch-all route (`/{*route}`), forwarding all HTTP requests to FastAPI.
+Triggered on push to `main` when `api/**` changes.
+
+1. Runs unit tests — deploy is blocked if any test fails
+2. Authenticates to GCP via Workload Identity Federation (no stored credentials)
+3. Builds the Docker image and pushes to Artifact Registry with both `:<sha>` and `:latest` tags
+4. Deploys the `:<sha>` image to Cloud Run via `google-github-actions/deploy-cloudrun`
+
+Workflow: `.github/workflows/backend.yml`
+
+### Frontend — Firebase Hosting
+
+Triggered on push to `main` when `app/**` changes.
+
+1. Authenticates to GCP via Workload Identity Federation
+2. Builds the Vite SPA with Firebase config injected from GitHub Actions secrets
+3. Deploys `dist/` to Firebase Hosting via `firebase deploy --only hosting`
+
+The `firebase.json` rewrite rule proxies `/api/**` to Cloud Run, so the frontend always uses same-origin API calls.
+
+Workflow: `.github/workflows/frontend.yml`
+
+### Infrastructure — Terraform
+
+Triggered on push to `main` when `infra/**` changes, or manually via `workflow_dispatch`.
+
+1. Authenticates to GCP via Workload Identity Federation
+2. Runs `terraform init` (GCS backend)
+3. Runs `terraform apply -auto-approve`
+
+Workflow: `.github/workflows/infra.yml`
 
 ---
 
 ## Environment Variables
 
+### Backend (Cloud Run / local)
+
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `AZURE_STORAGE_CONNECTION_STRING` | Yes (backend) | — | Azure Blob Storage connection string |
-| `AZURE_STORAGE_CONTAINER` | No | `decisions` | Blob container name |
+| `GCS_BUCKET_NAME` | Yes | — | GCS bucket for decision storage |
+| `FIREBASE_PROJECT_ID` | No | — | Firebase project ID for token verification; omit to use `X-User-Email` fallback |
 | `API_CORS_ORIGINS` | No | `http://localhost:3000` | Comma-separated allowed CORS origins |
-| `VITE_DECISIONS_API_URL` | No | `""` (same-origin) | Backend API base URL for the frontend |
-| `AAD_CLIENT_ID` | Yes (auth) | — | Azure AD OAuth client ID |
-| `AAD_CLIENT_SECRET` | Yes (auth) | — | Azure AD OAuth client secret |
-| `GITHUB_CLIENT_ID` | Yes (auth) | — | GitHub OAuth client ID |
-| `GITHUB_CLIENT_SECRET` | Yes (auth) | — | GitHub OAuth client secret |
-| `GOOGLE_CLIENT_ID` | Yes (auth) | — | Google OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | Yes (auth) | — | Google OAuth client secret |
+
+### Frontend (build-time)
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_FIREBASE_API_KEY` | Yes | Firebase Web API key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | Firebase auth domain |
+| `VITE_FIREBASE_PROJECT_ID` | Yes | GCP/Firebase project ID |
+| `VITE_FIREBASE_STORAGE_BUCKET` | Yes | Firebase Storage bucket |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | Yes | Firebase Cloud Messaging sender ID |
+| `VITE_FIREBASE_APP_ID` | Yes | Firebase app ID |

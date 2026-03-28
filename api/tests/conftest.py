@@ -13,7 +13,7 @@ from main import create_app
 
 
 # ---------------------------------------------------------------------------
-# In-memory storage backend (replaces Azure Blob in tests)
+# In-memory storage backend 
 # ---------------------------------------------------------------------------
 
 

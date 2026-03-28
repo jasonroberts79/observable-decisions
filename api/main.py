@@ -1,12 +1,7 @@
 """
 Observable Decisions – FastAPI Backend
 
-Provides CRUD + share endpoints for decision records, backed by Azure Blob Storage.
-
-Environment variables:
-    AZURE_STORAGE_CONNECTION_STRING  – required
-    AZURE_STORAGE_CONTAINER          – optional, defaults to "decisions"
-    API_CORS_ORIGINS                 – optional, comma-separated allowed origins
+Provides CRUD + share endpoints for decision records
 """
 
 from __future__ import annotations
@@ -71,8 +66,7 @@ def create_app(storage: StorageBackend | None = None) -> FastAPI:
     ----------
     storage:
         If *None* (the default – used in production), the backend is created
-        from environment variables.  Pass a concrete backend in tests to avoid
-        requiring real Azure credentials.
+        from environment variables. 
     """
     if storage is None:
         from storage import GCSBackend
@@ -241,17 +235,9 @@ def _register_routes(application: FastAPI) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _make_default_app() -> FastAPI:
-    """Lazy-create so that importing this module in tests doesn't require env vars."""
-    if os.environ.get("AZURE_STORAGE_CONNECTION_STRING"):
-        return create_app()
-    # Return a placeholder; production must have the env var set.
-    return create_app.__wrapped__  # type: ignore[attr-defined]  # noqa: never reached
-
-
 # When running under uvicorn, the env var will be set.
 # When running under pytest, tests use create_app(storage=...) directly.
-if os.environ.get("AZURE_STORAGE_CONNECTION_STRING"):
+if os.environ.get("GCS_BUCKET_NAME"):
     app = create_app()
 else:
     # Provide a module-level `app` so the import doesn't crash in test environments.
