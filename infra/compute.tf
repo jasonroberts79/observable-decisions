@@ -1,78 +1,89 @@
 # =============================================================================
-# App Service Plan (Flex Consumption)
+# Container Registry
 # =============================================================================
 
-resource "azurerm_service_plan" "functions" {
-  name                = "ASP-myResourceGroup-932d"
+resource "azurerm_container_registry" "main" {
+  # Name must be globally unique and alphanumeric only — change if already taken
+  name                = "observabledecisions"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = var.location_primary
+  sku                 = "Basic"
+  admin_enabled       = false
+
+  tags = {}
+}
+
+# Allow GitHub Actions to push images
+resource "azurerm_role_assignment" "gha_acr_push" {
+  scope                = azurerm_container_registry.main.id
+  role_definition_name = "AcrPush"
+  principal_id         = azurerm_user_assigned_identity.gha_obs_decisions.principal_id
+}
+
+# Allow App Service managed identity to pull images
+resource "azurerm_role_assignment" "app_service_acr_pull" {
+  scope                = azurerm_container_registry.main.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_linux_web_app.observable_api.identity[0].principal_id
+}
+
+# =============================================================================
+# App Service Plan (B1 — upgrade to S1+ to enable VNet integration)
+# =============================================================================
+
+resource "azurerm_service_plan" "api" {
+  name                = "ASP-observable-api"
   location            = var.location_primary
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
-  sku_name            = "FC1"
+  sku_name            = "B1"
 
   tags = {}
 }
 
 # =============================================================================
-# Function App: observable-api (Python 3.13, Flex Consumption)
+# App Service: observable-api
 # =============================================================================
-resource "azurerm_function_app_flex_consumption" "observable_api" {
-  app_settings                       = {
+
+resource "azurerm_linux_web_app" "observable_api" {
+  name                = "observable-api"
+  location            = var.location_primary
+  resource_group_name = azurerm_resource_group.main.name
+  service_plan_id     = azurerm_service_plan.api.id
+  https_only          = true
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  app_settings = {
     "APPLICATIONINSIGHTS_CONNECTION_STRING" = azurerm_application_insights.observable_decisions.connection_string
     "AZURE_STORAGE_CONNECTION_STRING"       = azurerm_storage_account.decisions.primary_connection_string
     "AZURE_STORAGE_CONTAINER"               = "decisions"
+    "WEBSITES_PORT"                         = "8000"
   }
-  client_certificate_enabled         = false  
-  client_certificate_mode            = "Required"
-  enabled                            = true
-  https_only                         = true
-  instance_memory_in_mb              = 512
-  location                           = var.location_primary
-  maximum_instance_count             = 100
-  name                               = "observable-api"
-  public_network_access_enabled      = true
-  resource_group_name                = azurerm_resource_group.main.name
-  runtime_name                       = "python"
-  runtime_version                    = "3.13"
-  service_plan_id                    = azurerm_service_plan.functions.id
-  storage_access_key                 = azurerm_storage_account.decisions.primary_access_key
-  storage_authentication_type        = "StorageAccountConnectionString"
-  storage_container_endpoint         = "${azurerm_storage_account.decisions.primary_blob_endpoint}${azurerm_storage_container.decisions.name}"
-  storage_container_type             = "blobContainer"
+
+  site_config {
+    minimum_tls_version                     = "1.2"
+    http2_enabled                           = true
+    container_registry_use_managed_identity = true
+
+    application_stack {
+      docker_image_name   = "observable-api:latest"
+      docker_registry_url = "https://${azurerm_container_registry.main.login_server}"
+    }
+  }
+
   tags = {
     "hidden-link: /app-insights-resource-id" = azurerm_application_insights.observable_decisions.id
   }
-  virtual_network_subnet_id                      = azurerm_subnet.app.id
-  webdeploy_publish_basic_authentication_enabled = true  
-  site_config {
-    container_registry_use_managed_identity       = false
-    default_documents                             = ["Default.htm", "Default.html", "Default.asp", "index.htm", "index.html", "iisstart.htm", "default.aspx", "index.php"]
-    elastic_instance_minimum                      = 0
-    http2_enabled                                 = true
-    ip_restriction_default_action                 = "Deny"
-    load_balancing_mode                           = "LeastRequests"
-    managed_pipeline_mode                         = "Integrated"
-    minimum_tls_version                           = "1.2"
-    remote_debugging_enabled                      = false
-    runtime_scale_monitoring_enabled              = false
-    scm_ip_restriction_default_action             = "Allow"
-    scm_minimum_tls_version                       = "1.2"
-    scm_use_main_ip_restriction                   = false
-    use_32_bit_worker                             = false
-    vnet_route_all_enabled                        = true
-    websockets_enabled                            = false
-    worker_count                                  = 1
-    cors {
-      allowed_origins     = ["https://portal.azure.com"]
-      support_credentials = false
-    }
-  }
+
   lifecycle {
     ignore_changes = [
-      # Deployment-managed settings that change on each deploy
-      app_settings["AzureWebJobsStorage"],
-      site_config["application_insights_connection_string"]
+      # Updated on every deploy — managed by CI/CD
+      site_config[0].application_stack[0].docker_image_name,
     ]
-  }  
+  }
 }
 
 # =============================================================================

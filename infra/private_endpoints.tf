@@ -59,26 +59,3 @@ resource "azurerm_private_endpoint" "storage_blob" {
 
   tags = {}
 }
-
-# =============================================================================
-# Private Endpoint: func-api-pep (Function App sites)
-# =============================================================================
-
-resource "azurerm_private_endpoint" "function_app" {
-  name                = "func-api-pep"
-  location            = var.location_primary
-  resource_group_name = azurerm_resource_group.main.name
-  subnet_id           = azurerm_subnet.core.id
-
-  private_service_connection {
-    name                           = "func-api-pep"
-    private_connection_resource_id = azurerm_function_app_flex_consumption.observable_api.id
-    subresource_names              = ["sites"]
-    is_manual_connection           = false
-  }
-
-  private_dns_zone_group {
-    name                 = "default"
-    private_dns_zone_ids = [azurerm_private_dns_zone.websites.id]
-  }
-}

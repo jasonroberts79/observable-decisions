@@ -6,8 +6,8 @@ output "static_web_app_default_hostname" {
   value = azurerm_static_web_app.observable_decisions.default_host_name
 }
 
-output "function_app_default_hostname" {
-  value = azurerm_function_app_flex_consumption.observable_api.default_hostname
+output "web_app_default_hostname" {
+  value = azurerm_linux_web_app.observable_api.default_hostname
 }
 
 output "storage_account_name" {
