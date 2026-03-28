@@ -61,8 +61,8 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
     try {
       const saved =
         mode === "edit" && initial?.id
-          ? await updateDecision(initial.id, body, user.userDetails)
-          : await createDecision(body, user.userDetails)
+          ? await updateDecision(initial.id, body)
+          : await createDecision(body)
 
       navigate(`/decisions/${saved.id}`)
     } catch (err) {

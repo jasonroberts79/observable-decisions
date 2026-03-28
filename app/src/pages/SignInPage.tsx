@@ -1,7 +1,19 @@
+import { useState } from "react"
 import { ChevronRight } from "lucide-react"
-import { loginUrl } from "@/lib/auth"
+import { signInWithGoogle, signInWithGitHub } from "@/lib/auth"
 
 export function SignInPage() {
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSignIn = (fn: () => Promise<void>) => async () => {
+    setError(null)
+    try {
+      await fn()
+    } catch {
+      setError("Sign-in failed. Please try again.")
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
@@ -21,33 +33,29 @@ export function SignInPage() {
         </div>
 
         <div className="space-y-2.5">
-          <a
-            href={loginUrl("google")}
+          <button
+            onClick={handleSignIn(signInWithGoogle)}
             className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
             <GoogleIcon />
             Continue with Google
-          </a>
+          </button>
 
-          <a
-            href={loginUrl("aad")}
-            className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
-          >
-            <MicrosoftIcon />
-            Continue with Microsoft
-          </a>
-
-          <a
-            href={loginUrl("github")}
+          <button
+            onClick={handleSignIn(signInWithGitHub)}
             className="flex w-full items-center justify-center gap-2.5 rounded-md border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
           >
             <GitHubIcon />
             Continue with GitHub
-          </a>
+          </button>
         </div>
 
+        {error && (
+          <p className="text-xs text-red-600">{error}</p>
+        )}
+
         <p className="text-xs text-zinc-400">
-          Authentication is handled by Azure Static Web Apps built-in auth.
+          Authentication is handled by Firebase.
         </p>
       </div>
     </div>
@@ -73,17 +81,6 @@ function GoogleIcon() {
         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
         fill="#EA4335"
       />
-    </svg>
-  )
-}
-
-function MicrosoftIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-      <path d="M11.4 2H2v9.4h9.4V2z" fill="#F25022" />
-      <path d="M22 2h-9.4v9.4H22V2z" fill="#7FBA00" />
-      <path d="M11.4 12.6H2V22h9.4v-9.4z" fill="#00A4EF" />
-      <path d="M22 12.6h-9.4V22H22v-9.4z" fill="#FFB900" />
     </svg>
   )
 }

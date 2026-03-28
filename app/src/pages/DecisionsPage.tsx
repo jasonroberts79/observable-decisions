@@ -14,7 +14,7 @@ export function DecisionsPage() {
 
   useEffect(() => {
     if (!user) return
-    listDecisions(user.userDetails)
+    listDecisions()
       .then(setDecisions)
       .catch((err) => setFetchError(String(err)))
       .finally(() => setLoading(false))

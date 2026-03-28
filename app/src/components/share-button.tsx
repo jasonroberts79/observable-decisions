@@ -21,11 +21,7 @@ export function ShareButton({ id }: ShareButtonProps) {
     if (!user) return
     setState("loading")
     try {
-      const data = await shareDecision(
-        id,
-        user.userDetails,
-        email || undefined,
-      )
+      const data = await shareDecision(id, email || undefined)
       setShareUrl(data.url)
       setState("done")
     } catch {

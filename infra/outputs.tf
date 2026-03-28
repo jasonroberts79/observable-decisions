@@ -1,24 +1,17 @@
-output "resource_group_name" {
-  value = azurerm_resource_group.main.name
+output "cloud_run_url" {
+  value = google_cloud_run_v2_service.api.uri
 }
 
-output "static_web_app_default_hostname" {
-  value = azurerm_static_web_app.observable_decisions.default_host_name
+output "artifact_registry_url" {
+  value = "${var.region}-docker.pkg.dev/${var.project_id}/observable-api"
 }
 
-output "web_app_default_hostname" {
-  value = azurerm_linux_web_app.observable_api.default_hostname
+output "workload_identity_provider" {
+  description = "Use as GCP_WORKLOAD_IDENTITY_PROVIDER in GitHub Actions secrets"
+  value       = google_iam_workload_identity_pool_provider.github.name
 }
 
-output "storage_account_name" {
-  value = azurerm_storage_account.decisions.name
-}
-
-output "key_vault_uri" {
-  value = azurerm_key_vault.main.vault_uri
-}
-
-output "gha_obs_decisions_client_id" {
-  description = "Client ID for the observable-decisions GitHub Actions managed identity (use as AZURE_CLIENT_ID in workflows)"
-  value       = azurerm_user_assigned_identity.gha_obs_decisions.client_id
+output "github_actions_service_account" {
+  description = "Use as GCP_SERVICE_ACCOUNT in GitHub Actions secrets"
+  value       = google_service_account.github_actions.email
 }

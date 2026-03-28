@@ -1,69 +1,47 @@
-name: Azure Static Web Apps CI/CD
+name: Frontend - Firebase Hosting
 
 on:
   push:
+    branches: [main]
     paths:
       - "app/**"
       - ".github/workflows/frontend.yml"
-    branches:
-      - main
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    branches: [main]
     paths:
       - "app/**"
       - ".github/workflows/frontend.yml"
-    branches:
-      - main
-
-env:
-  STATICWEBAPPNAME: "observable-decisions"
+  workflow_dispatch:
 
 jobs:
-  build_and_deploy_job:
+  build_and_deploy:
+    name: Build and Deploy
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
         with:
-          submodules: true
-          lfs: false
-      - name: Install OIDC Client from Core Package
-        run: npm install @actions/core@1.6.0 @actions/http-client
-      - name: Get Id Token
-        uses: actions/github-script@v6
-        id: idtoken
-        with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - name: Build
         working-directory: app
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
         run: |
           npm install
           npm run build
-          cp staticwebapp.config.json dist/
-      - name: Log in to Azure
-        uses: azure/login@v3
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Get API key 🔑
-        id: static_web_app_apikey
-        uses: azure/CLI@v3
-        with:
-          inlineScript: |
-            APIKEY=$(az staticwebapp secrets list --name '${{ env.STATICWEBAPPNAME }}' | jq -r '.properties.apiKey')
-            echo "APIKEY=$APIKEY" >> $GITHUB_OUTPUT
-      - name: Deploy
+      - name: Deploy to Firebase Hosting
         working-directory: app
-        shell: pwsh
         run: |
-          npm install -g @azure/static-web-apps-cli
-          $SWA_CLI_DEPLOYMENT_TOKEN = "${{ steps.static_web_app_apikey.outputs.APIKEY }}"
-          swa deploy dist/ --env production -n ${{ env.STATICWEBAPPNAME }}
+          npm install -g firebase-tools
+          firebase deploy --only hosting --project observable-decisions

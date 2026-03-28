@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom"
 import { useAuth } from "@/lib/auth-context"
-import { logoutUrl } from "@/lib/auth"
+import { signOut } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 import {
   BookOpen,
@@ -62,7 +62,7 @@ export function Nav() {
       <div className="space-y-0.5 border-t border-zinc-200 px-3 py-3">
         {user && (
           <div className="mb-2 truncate px-2.5 text-xs text-zinc-400">
-            {user.userDetails}
+            {user.email}
           </div>
         )}
         <Link
@@ -77,13 +77,13 @@ export function Nav() {
           <Settings className="h-4 w-4" />
           Settings
         </Link>
-        <a
-          href={logoutUrl}
+        <button
+          onClick={() => signOut()}
           className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
         >
           <LogOut className="h-4 w-4" />
           Sign out
-        </a>
+        </button>
       </div>
     </aside>
   )

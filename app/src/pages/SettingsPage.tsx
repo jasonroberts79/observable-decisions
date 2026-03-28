@@ -2,6 +2,7 @@ import { CheckCircle } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { providerLabel } from "@/lib/auth"
 
+
 export function SettingsPage() {
   const { user } = useAuth()
   if (!user) return null
@@ -21,8 +22,8 @@ export function SettingsPage() {
           Account
         </h2>
         <div className="rounded-md border border-zinc-200 bg-white divide-y divide-zinc-100">
-          <Row label="Email" value={user.userDetails ?? "\u2014"} />
-          <Row label="Provider" value={providerLabel(user.identityProvider)} />
+          <Row label="Email" value={user.email ?? "\u2014"} />
+          <Row label="Provider" value={providerLabel(user.providerData[0]?.providerId ?? "")} />
         </div>
       </section>
 

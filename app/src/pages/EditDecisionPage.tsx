@@ -15,7 +15,7 @@ export function EditDecisionPage() {
 
   useEffect(() => {
     if (!user || !id) return
-    getDecision(id, user.userDetails)
+    getDecision(id)
       .then(setDecision)
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))

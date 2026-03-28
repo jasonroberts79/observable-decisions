@@ -1,4 +1,4 @@
-name: Backend - App Service
+name: Backend - Cloud Run
 
 on:
   push:
@@ -9,11 +9,9 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: "observable-api"
-  AZURE_SWA_NAME: "observable-decisions"
-  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
-  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
-  IMAGE_NAME: observable-api
+  PROJECT_ID: observable-decisions
+  REGION: us-east4
+  IMAGE: us-east4-docker.pkg.dev/observable-decisions/observable-api/observable-api
 
 jobs:
   test_api:
@@ -24,8 +22,7 @@ jobs:
         working-directory: api
     steps:
       - uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v7
       - name: Set up Python
         run: uv python install
       - name: Install dependencies
@@ -34,7 +31,7 @@ jobs:
         run: uv run pytest tests/ -v --tb=short
 
   deploy_api:
-    name: Deploy API to App Service
+    name: Deploy to Cloud Run
     needs: test_api
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -43,50 +40,26 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Log in to Azure
-        uses: azure/login@v3
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      - name: Log in to ACR
-        run: az acr login --name ${{ env.ACR_LOGIN_SERVER }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Authenticate Docker to Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
       - name: Build and push Docker image
         run: |
           docker build \
-            -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest \
+            -t ${{ env.IMAGE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE }}:latest \
             ./api
-          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
-      - name: Deploy to App Service
-        uses: azure/webapps-deploy@v3
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
+          docker push ${{ env.IMAGE }}:latest
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          images: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-      - name: Link to front-end
-        shell: pwsh
-        run: |
-          $swa = az staticwebapp backends show -n ${{ env.AZURE_SWA_NAME }} -g ${{ env.AZURE_RESOURCE_GROUP }} | ConvertFrom-Json
-          $webApp = az webapp show -n ${{ env.AZURE_WEBAPP_NAME }} -g ${{ env.AZURE_RESOURCE_GROUP }} | ConvertFrom-Json
-
-          $isLinked = $true
-          if($null -eq $swa) {
-            Write-Host "SWA is unlinked"
-            $isLinked = $false
-          } elseif($swa.backendResourceId -ne $webApp.id) {
-            Write-Host "SWA is linked to the incorrect backend... unlinking"
-            az staticwebapp backends unlink `
-              --name ${{ env.AZURE_SWA_NAME }} `
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
-            $isLinked = $false
-          }
-
-          if(-not $isLinked) {
-            Write-Host "Linking SWA to backend $($webApp.id)"
-            az staticwebapp backends link `
-              --name ${{ env.AZURE_SWA_NAME }} `
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} `
-              --backend-resource-id $webApp.id `
-              --backend-region $webApp.location
-          }
+          service: observable-api
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE }}:${{ github.sha }}

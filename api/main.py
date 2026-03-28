@@ -15,8 +15,10 @@ import os
 import uuid
 from datetime import datetime, timezone
 
+import firebase_admin
+from firebase_admin import auth as firebase_auth
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Header, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from models import (
@@ -30,6 +32,31 @@ from models import (
 from storage.base import StorageBackend
 
 load_dotenv()
+
+
+def _init_firebase() -> None:
+    project_id = os.environ.get("FIREBASE_PROJECT_ID")
+    if project_id and not firebase_admin._apps:
+        firebase_admin.initialize_app(options={"projectId": project_id})
+
+
+async def _get_current_user(
+    authorization: str | None = Header(default=None),
+    x_user_email: str | None = Header(default=None),
+) -> str | None:
+    """Verify Firebase ID token and return the user's email.
+
+    Falls back to the X-User-Email header when FIREBASE_PROJECT_ID is not set
+    (local development without Firebase configured).
+    """
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.removeprefix("Bearer ").strip()
+        try:
+            decoded = firebase_auth.verify_id_token(token)
+            return decoded.get("email")
+        except Exception:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return x_user_email
 
 
 # ---------------------------------------------------------------------------
@@ -48,16 +75,14 @@ def create_app(storage: StorageBackend | None = None) -> FastAPI:
         requiring real Azure credentials.
     """
     if storage is None:
-        from storage import AzureBlobBackend
+        from storage import GCSBackend
 
-        conn = os.environ.get("AZURE_STORAGE_CONNECTION_STRING", "")
-        container = os.environ.get("AZURE_STORAGE_CONTAINER", "decisions")
-        if not conn:
-            raise RuntimeError(
-                "AZURE_STORAGE_CONNECTION_STRING must be set. "
-                "See https://learn.microsoft.com/en-us/azure/storage/common/storage-configure-connection-string"
-            )
-        storage = AzureBlobBackend(connection_string=conn, container=container)
+        bucket = os.environ.get("GCS_BUCKET_NAME", "")
+        if not bucket:
+            raise RuntimeError("GCS_BUCKET_NAME must be set.")
+        storage = GCSBackend(bucket_name=bucket)
+
+    _init_firebase()
 
     application = FastAPI(
         title="Observable Decisions API",
@@ -106,17 +131,17 @@ def _register_routes(application: FastAPI) -> None:
     @application.get("/api/decisions", response_model=list[DecisionMeta])
     async def list_decisions(
         request: Request,
-        x_user_email: str | None = Header(default=None),
+        current_user: str | None = Depends(_get_current_user),
     ):
         """Return lightweight metadata for every decision owned by the caller."""
-        metas = await _storage(request).list(_prefix(x_user_email))
+        metas = await _storage(request).list(_prefix(current_user))
         return [m.model_dump(by_alias=True) for m in metas]
 
     @application.post("/api/decisions", response_model=dict, status_code=201)
     async def create_decision(
         request: Request,
         body: DecisionCreate,
-        x_user_email: str | None = Header(default=None),
+        current_user: str | None = Depends(_get_current_user),
     ):
         """Create a new decision record."""
         now = _now_iso()
@@ -137,10 +162,10 @@ def _register_routes(application: FastAPI) -> None:
             sharedWith=body.shared_with,
             createdAt=now,
             updatedAt=now,
-            createdBy=x_user_email or "unknown",
+            createdBy=current_user or "unknown",
         )
 
-        prefix = _prefix(x_user_email)
+        prefix = _prefix(current_user)
         await _storage(request).put(prefix, decision_id, decision)
         return decision.model_dump(by_alias=True)
 
@@ -148,11 +173,11 @@ def _register_routes(application: FastAPI) -> None:
     async def get_decision(
         request: Request,
         decision_id: str,
-        x_user_email: str | None = Header(default=None),
+        current_user: str | None = Depends(_get_current_user),
     ):
         """Retrieve a single decision by id."""
         try:
-            decision = await _storage(request).get(_prefix(x_user_email), decision_id)
+            decision = await _storage(request).get(_prefix(current_user), decision_id)
         except Exception:
             raise HTTPException(status_code=404, detail="Decision not found")
         return decision.model_dump(by_alias=True)
@@ -162,10 +187,10 @@ def _register_routes(application: FastAPI) -> None:
         request: Request,
         decision_id: str,
         body: DecisionUpdate,
-        x_user_email: str | None = Header(default=None),
+        current_user: str | None = Depends(_get_current_user),
     ):
         """Merge-update an existing decision."""
-        prefix = _prefix(x_user_email)
+        prefix = _prefix(current_user)
 
         try:
             existing = await _storage(request).get(prefix, decision_id)
@@ -186,11 +211,11 @@ def _register_routes(application: FastAPI) -> None:
     async def delete_decision(
         request: Request,
         decision_id: str,
-        x_user_email: str | None = Header(default=None),
+        current_user: str | None = Depends(_get_current_user),
     ):
         """Delete a decision by id."""
         try:
-            await _storage(request).delete(_prefix(x_user_email), decision_id)
+            await _storage(request).delete(_prefix(current_user), decision_id)
         except Exception:
             raise HTTPException(status_code=500, detail="Failed to delete decision")
         return None
@@ -200,12 +225,12 @@ def _register_routes(application: FastAPI) -> None:
         request: Request,
         decision_id: str,
         body: ShareRequest | None = None,
-        x_user_email: str | None = Header(default=None),
+        current_user: str | None = Depends(_get_current_user),
     ):
         """Generate a shareable URL for a decision."""
         email = body.email if body else None
         try:
-            url = await _storage(request).share(_prefix(x_user_email), decision_id, email)
+            url = await _storage(request).share(_prefix(current_user), decision_id, email)
         except Exception:
             raise HTTPException(status_code=500, detail="Failed to generate share link")
         return ShareResponse(url=url)

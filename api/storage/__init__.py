@@ -1,4 +1,4 @@
 from .base import StorageBackend
-from .azure_blob import AzureBlobBackend
+from .gcs import GCSBackend
 
-__all__ = ["StorageBackend", "AzureBlobBackend"]
+__all__ = ["StorageBackend", "GCSBackend"]

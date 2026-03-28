@@ -1,38 +1,32 @@
+import { auth } from "@/lib/firebase"
 import type { Decision, DecisionMeta } from "@/lib/decisions/schema"
 
-function headers(email: string): HeadersInit {
+async function authHeaders(): Promise<HeadersInit> {
+  const token = await auth.currentUser?.getIdToken()
   return {
     "Content-Type": "application/json",
-    "x-user-email": email,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   }
 }
 
-export async function listDecisions(email: string): Promise<DecisionMeta[]> {
-  const res = await fetch("/api/decisions", {
-    headers: headers(email),
-  })
+export async function listDecisions(): Promise<DecisionMeta[]> {
+  const res = await fetch("/api/decisions", { headers: await authHeaders() })
   if (!res.ok) throw new Error(`API responded with ${res.status}`)
   return res.json()
 }
 
-export async function getDecision(
-  id: string,
-  email: string,
-): Promise<Decision> {
-  const res = await fetch(`/api/decisions/${id}`, {
-    headers: headers(email),
-  })
+export async function getDecision(id: string): Promise<Decision> {
+  const res = await fetch(`/api/decisions/${id}`, { headers: await authHeaders() })
   if (!res.ok) throw new Error(`Not found`)
   return res.json()
 }
 
 export async function createDecision(
   body: Record<string, unknown>,
-  email: string,
 ): Promise<Decision> {
   const res = await fetch("/api/decisions", {
     method: "POST",
-    headers: headers(email),
+    headers: await authHeaders(),
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -45,11 +39,10 @@ export async function createDecision(
 export async function updateDecision(
   id: string,
   body: Record<string, unknown>,
-  email: string,
 ): Promise<Decision> {
   const res = await fetch(`/api/decisions/${id}`, {
     method: "PUT",
-    headers: headers(email),
+    headers: await authHeaders(),
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -61,12 +54,11 @@ export async function updateDecision(
 
 export async function shareDecision(
   id: string,
-  email: string,
   shareEmail?: string,
 ): Promise<{ url: string }> {
   const res = await fetch(`/api/decisions/${id}/share`, {
     method: "POST",
-    headers: headers(email),
+    headers: await authHeaders(),
     body: JSON.stringify(shareEmail ? { email: shareEmail } : {}),
   })
   if (!res.ok) {

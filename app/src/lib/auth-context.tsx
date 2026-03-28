@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react"
-import { getAuthInfo, type ClientPrincipal } from "@/lib/auth"
+import { onAuthStateChanged, type User } from "firebase/auth"
+import { auth } from "@/lib/firebase"
 
 interface AuthContextValue {
-  user: ClientPrincipal | null
+  user: User | null
   loading: boolean
 }
 
@@ -12,12 +13,12 @@ const AuthContext = createContext<AuthContextValue>({
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<ClientPrincipal | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getAuthInfo().then((info) => {
-      setUser(info.clientPrincipal)
+    return onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser)
       setLoading(false)
     })
   }, [])
