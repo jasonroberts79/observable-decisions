@@ -1,7 +1,6 @@
-import { CheckCircle } from "lucide-react"
+import { CheckCircle, LogOut } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
-import { providerLabel } from "@/lib/auth"
-
+import { providerLabel, signOut } from "@/lib/auth"
 
 export function SettingsPage() {
   const { user } = useAuth()
@@ -22,7 +21,7 @@ export function SettingsPage() {
           Account
         </h2>
         <div className="rounded-md border border-zinc-200 bg-white divide-y divide-zinc-100">
-          <Row label="Email" value={user.email ?? "\u2014"} />
+          <Row label="Email" value={user.email ?? "—"} />
           <Row label="Provider" value={providerLabel(user.providerData[0]?.providerId ?? "")} />
         </div>
       </section>
@@ -40,6 +39,17 @@ export function SettingsPage() {
           <CheckCircle className="h-4 w-4 mt-0.5 shrink-0" />
           <p>The API backend is linked. Decisions are stored via the API.</p>
         </div>
+      </section>
+
+      {/* Sign out — mobile only (desktop uses sidebar) */}
+      <section className="sm:hidden">
+        <button
+          onClick={() => signOut()}
+          className="flex w-full items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
       </section>
     </div>
   )
