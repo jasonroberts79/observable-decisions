@@ -31,9 +31,10 @@ export function DecisionsPage() {
             All recorded decisions across types and domains.
           </p>
         </div>
+        {/* Hidden on mobile — FAB in DecisionList handles it */}
         <Link
           to="/decisions/new"
-          className="flex items-center gap-1.5 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           New

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { Link } from "react-router-dom"
 import Fuse from "fuse.js"
-import { Search, X } from "lucide-react"
+import { Search, X, Plus } from "lucide-react"
 import { StatusBadge } from "@/components/status-badge"
 import { formatDate } from "@/lib/utils"
 import type { DecisionMeta, DecisionStatus } from "@/lib/decisions/schema"
@@ -43,7 +43,6 @@ export function DecisionList({ decisions }: DecisionListProps) {
     return result
   }, [query, statusFilter, decisions, fuse])
 
-  // Reset cursor when results change
   useEffect(() => setCursor(0), [filtered.length])
 
   const handleKey = useCallback(
@@ -83,8 +82,8 @@ export function DecisionList({ decisions }: DecisionListProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search decisions\u2026"
-            className="w-full rounded-md border border-zinc-200 bg-white py-1.5 pl-8 pr-8 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            placeholder="Search decisions…"
+            className="w-full rounded-md border border-zinc-200 bg-white py-3 pl-8 pr-8 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 sm:py-1.5"
           />
           {query && (
             <button
@@ -96,10 +95,10 @@ export function DecisionList({ decisions }: DecisionListProps) {
           )}
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex min-h-[44px] flex-wrap items-center gap-1.5 sm:min-h-0">
           <button
             onClick={() => setStatusFilter(null)}
-            className={`rounded px-2 py-0.5 text-xs transition-colors ${
+            className={`rounded px-2 py-2 text-xs transition-colors sm:py-0.5 ${
               statusFilter === null
                 ? "bg-zinc-900 text-white"
                 : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
@@ -113,7 +112,7 @@ export function DecisionList({ decisions }: DecisionListProps) {
               onClick={() =>
                 setStatusFilter(statusFilter === s ? null : s)
               }
-              className={`rounded px-2 py-0.5 text-xs capitalize transition-colors ${
+              className={`rounded px-2 py-2 text-xs capitalize transition-colors sm:py-0.5 ${
                 statusFilter === s
                   ? "bg-zinc-900 text-white"
                   : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
@@ -125,7 +124,6 @@ export function DecisionList({ decisions }: DecisionListProps) {
         </div>
       </div>
 
-      {/* Table */}
       {filtered.length === 0 ? (
         <div className="rounded-md border border-dashed border-zinc-200 py-12 text-center text-sm text-zinc-400">
           {query || statusFilter
@@ -133,80 +131,137 @@ export function DecisionList({ decisions }: DecisionListProps) {
             : "No decisions yet. Create your first one."}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-md border border-zinc-200">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs text-zinc-500">
-                <th className="px-4 py-2.5 font-medium">Title</th>
-                <th className="px-3 py-2.5 font-medium">Status</th>
-                <th className="hidden px-3 py-2.5 font-medium sm:table-cell">
-                  Date
-                </th>
-                <th className="hidden px-3 py-2.5 font-medium md:table-cell">
-                  Tags
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {filtered.map((d, i) => (
-                <tr
-                  key={d.id}
-                  data-cursor={i === cursor}
-                  className={`group transition-colors hover:bg-zinc-50 ${
-                    i === cursor ? "bg-zinc-50" : "bg-white"
-                  }`}
-                >
-                  <td className="px-4 py-2.5">
-                    <Link
-                      to={`/decisions/${d.id}`}
-                      className="font-medium text-zinc-900 hover:text-zinc-600 group-hover:underline decoration-zinc-300 underline-offset-2"
-                    >
-                      {d.title}
-                    </Link>
-                    {d.deciders.length > 0 && (
-                      <p className="mt-0.5 text-xs text-zinc-400">
-                        {d.deciders.join(", ")}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={d.status} />
-                  </td>
-                  <td className="hidden px-3 py-2.5 text-xs text-zinc-500 sm:table-cell">
-                    {formatDate(d.date)}
-                  </td>
-                  <td className="hidden px-3 py-2.5 md:table-cell">
-                    {d.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {d.tags.slice(0, 3).map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {d.tags.length > 3 && (
-                          <span className="text-xs text-zinc-400">
-                            +{d.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </td>
+        <>
+          {/* ── Mobile card list (hidden at sm+) ── */}
+          <div className="space-y-2 sm:hidden">
+            {filtered.map((d) => (
+              <Link
+                key={d.id}
+                to={`/decisions/${d.id}`}
+                className="block rounded-md border border-zinc-200 bg-white px-4 py-3 hover:bg-zinc-50 transition-colors"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="font-medium text-zinc-900 leading-snug">
+                    {d.title}
+                  </span>
+                  <StatusBadge status={d.status} />
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="text-xs text-zinc-400">{formatDate(d.date)}</span>
+                  {d.deciders.length > 0 && (
+                    <span className="text-xs text-zinc-400">
+                      · {d.deciders.join(", ")}
+                    </span>
+                  )}
+                  {d.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {d.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {d.tags.length > 3 && (
+                        <span className="text-xs text-zinc-400">
+                          +{d.tags.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* ── Desktop table (hidden below sm) ── */}
+          <div className="hidden overflow-hidden rounded-md border border-zinc-200 sm:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs text-zinc-500">
+                  <th className="px-4 py-2.5 font-medium">Title</th>
+                  <th className="px-3 py-2.5 font-medium">Status</th>
+                  <th className="hidden px-3 py-2.5 font-medium sm:table-cell">
+                    Date
+                  </th>
+                  <th className="hidden px-3 py-2.5 font-medium md:table-cell">
+                    Tags
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {filtered.map((d, i) => (
+                  <tr
+                    key={d.id}
+                    data-cursor={i === cursor}
+                    className={`group transition-colors hover:bg-zinc-50 ${
+                      i === cursor ? "bg-zinc-50" : "bg-white"
+                    }`}
+                  >
+                    <td className="px-4 py-2.5">
+                      <Link
+                        to={`/decisions/${d.id}`}
+                        className="font-medium text-zinc-900 hover:text-zinc-600 group-hover:underline decoration-zinc-300 underline-offset-2"
+                      >
+                        {d.title}
+                      </Link>
+                      {d.deciders.length > 0 && (
+                        <p className="mt-0.5 text-xs text-zinc-400">
+                          {d.deciders.join(", ")}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <StatusBadge status={d.status} />
+                    </td>
+                    <td className="hidden px-3 py-2.5 text-xs text-zinc-500 sm:table-cell">
+                      {formatDate(d.date)}
+                    </td>
+                    <td className="hidden px-3 py-2.5 md:table-cell">
+                      {d.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {d.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-500"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {d.tags.length > 3 && (
+                            <span className="text-xs text-zinc-400">
+                              +{d.tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {filtered.length > 0 && (
         <p className="text-xs text-zinc-400">
           {filtered.length} decision{filtered.length !== 1 ? "s" : ""}
-          {(query || statusFilter) && ` \u00b7 j/k to navigate`}
+          <span className="hidden sm:inline">
+            {(query || statusFilter) && ` · j/k to navigate`}
+          </span>
         </p>
       )}
+
+      {/* ── FAB — mobile only ── */}
+      <Link
+        to="/decisions/new"
+        className="fixed bottom-6 right-4 z-20 flex items-center gap-2 rounded-full bg-zinc-900 px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-zinc-700 transition-colors sm:hidden"
+      >
+        <Plus className="h-4 w-4" />
+        New Decision
+      </Link>
     </div>
   )
 }
