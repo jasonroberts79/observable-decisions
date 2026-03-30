@@ -72,7 +72,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 pb-20 sm:pb-0">
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
@@ -89,19 +89,19 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          placeholder="Short imperative sentence describing the decision\u2026"
-          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+          placeholder="Short imperative sentence describing the decision…"
+          className="w-full rounded-md border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 sm:py-2"
         />
       </div>
 
-      {/* Row: status, date */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* Row: status, date — stacked on mobile */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">
           <label className="text-sm font-medium text-zinc-700">Status</label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as DecisionStatus)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 sm:py-2"
           >
             {DecisionStatus.options.map((s) => (
               <option key={s} value={s}>
@@ -116,7 +116,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-3 text-sm text-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-400 sm:py-2"
           />
         </div>
       </div>
@@ -127,7 +127,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
         <TagInput
           value={deciders}
           onChange={setDeciders}
-          placeholder="Add name or email\u2026"
+          placeholder="Add name or email…"
         />
         <p className="text-xs text-zinc-400">
           Press Enter or comma to add each person.
@@ -137,7 +137,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
       {/* Tags */}
       <div className="space-y-1">
         <label className="text-sm font-medium text-zinc-700">Tags</label>
-        <TagInput value={tags} onChange={setTags} placeholder="Add tag\u2026" />
+        <TagInput value={tags} onChange={setTags} placeholder="Add tag…" />
       </div>
 
       <hr className="border-zinc-100" />
@@ -183,13 +183,13 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
             value={supersededBy}
             onChange={(e) => setSupersededBy(e.target.value)}
             placeholder="ID of the superseding decision"
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400"
+            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-3 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 sm:py-2"
           />
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
+      {/* Actions — sticky on mobile, inline on desktop */}
+      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between border-t border-zinc-100 bg-white px-4 py-3 sm:static sm:border-t sm:px-0 sm:pt-4">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -203,7 +203,7 @@ export function DecisionForm({ mode, initial }: DecisionFormProps) {
           className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 transition-colors"
         >
           {submitting
-            ? "Saving\u2026"
+            ? "Saving…"
             : mode === "edit"
               ? "Save changes"
               : "Create decision"}

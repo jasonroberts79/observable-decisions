@@ -41,7 +41,7 @@ export function TagInput({
   return (
     <div
       className={cn(
-        "flex flex-wrap gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-2 focus-within:ring-1 focus-within:ring-zinc-400",
+        "flex min-h-[44px] flex-wrap gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-2 focus-within:ring-1 focus-within:ring-zinc-400 sm:min-h-0",
         className,
       )}
     >
@@ -54,7 +54,7 @@ export function TagInput({
           <button
             type="button"
             onClick={() => remove(tag)}
-            className="text-zinc-400 hover:text-zinc-700"
+            className="-mr-0.5 p-1 text-zinc-400 hover:text-zinc-700"
           >
             <X className="h-3 w-3" />
           </button>
