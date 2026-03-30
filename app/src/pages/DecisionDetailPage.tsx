@@ -33,8 +33,8 @@ export function DecisionDetailPage() {
 
   return (
     <div className="space-y-8">
-      {/* Back + actions */}
-      <div className="flex items-center justify-between">
+      {/* Back + actions — sticky on mobile */}
+      <div className="sticky top-11 z-10 -mx-4 flex items-center justify-between border-b border-zinc-100 bg-white px-4 py-2 sm:static sm:mx-0 sm:border-b-0 sm:px-0 sm:py-0">
         <Link
           to="/decisions"
           className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
@@ -146,7 +146,7 @@ export function DecisionDetailPage() {
                   </p>
                 )}
                 {(option.pros.length > 0 || option.cons.length > 0) && (
-                  <div className="mt-2.5 grid grid-cols-2 gap-4">
+                  <div className="mt-2.5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {option.pros.length > 0 && (
                       <div>
                         <p className="text-xs font-medium text-green-700">
